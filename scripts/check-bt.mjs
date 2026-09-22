@@ -120,6 +120,21 @@ t("keep: memory cleared when the parent returns Success", () => {
   assert.equal(out.status, S.SUCCESS);
   assert.equal(L.a.ticks, 2);
 });
+/* The one mode this course invents beyond the published dialects, and the half of
+   it no library ships. `stop` is Success for a Fallback, so keep holds its memory
+   across a Success there exactly as it holds it across a Failure on a Sequence. */
+t("keep on a Fallback: memory kept across Success, the failed plan A is not re-asked", () => {
+  const L = { a: scripted("action", [S.FAILURE]), b: scripted("action", [S.SUCCESS]) };
+  const { out } = run(FB([A("a"), A("b")], "keep"), L, 2);
+  assert.equal(out.status, S.SUCCESS);
+  assert.equal(L.a.ticks, 1, "plan A failed on tick 1 and must not be asked again");
+  assert.equal(L.b.ticks, 2, "the walk resumes at the child that ended it");
+});
+t("Fallback memory, for contrast: the same two plans restart from plan A", () => {
+  const L = { a: scripted("action", [S.FAILURE]), b: scripted("action", [S.SUCCESS]) };
+  run(FB([A("a"), A("b")], "memory"), L, 2);
+  assert.equal(L.a.ticks, 2);
+});
 t("Fallback memory: a failed plan A is not re-asked while plan B is Running", () => {
   const L = { a: scripted("action", [S.FAILURE]), b: scripted("action", [S.RUNNING, S.SUCCESS]) };
   run(FB([A("a"), A("b")], "memory"), L, 2);
