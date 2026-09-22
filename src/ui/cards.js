@@ -31,7 +31,7 @@ export function renderCards(root) {
   h.textContent = "Card catalogue";
   const p = el("p", "cards__lede");
   p.textContent =
-    "Every card here is cut from a chapter - the claim it kills, the equation it " +
+    "Every card here is cut from a chapter - the claim it kills, the rule it " +
     "states, the question it asks. Reading a thing once teaches you that you have " +
     "read it. Being asked it a week later is what makes you know it.";
   head.append(h, p);

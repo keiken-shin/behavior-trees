@@ -40,8 +40,8 @@ export function renderCheckride(root) {
   h.textContent = "The checkride";
   const p = el("p", "cards__lede",
     "Five items. Each one asks you to go and produce a tree the course claimed would " +
-    "work - not to recognise it in a list. The aircraft is the same interpreter you have " +
-    "been flying all along, and every item starts fresh, so a bad one costs you nothing " +
+    "work - not to recognise it in a list. The drone and the interpreter are the same ones " +
+    "you have used all along, and every item starts fresh, so a bad one costs you nothing " +
     "but that item.");
   head.append(h, p);
   wrap.appendChild(head);
