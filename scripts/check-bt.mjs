@@ -249,5 +249,50 @@ t("pick and place: the tree re-plans when the ball moves while the gripper close
   assert.deepEqual(seq, [S.RUNNING, S.RUNNING, S.RUNNING, S.RUNNING, S.SUCCESS]);
 });
 
+/* ── the text form ─────────────────────────────────────────────────────── */
+import { parse, format, ParseError } from "../src/bt/parse.js";
+const LEAVES = {
+  BatteryBelow: { kind: "condition" }, ReturnHome: { kind: "action" },
+  FlyTo: { kind: "action" }, Land: { kind: "action" }, Charge: { kind: "action" },
+};
+const SAMPLE = [
+  "? root",
+  "  -> low battery {memory}",
+  "    BatteryBelow 30",
+  "    ReturnHome",
+  "  -> deliver",
+  "    FlyTo A",
+  "    Land",
+].join("\n");
+t("parse: the sample tree has the right shape", () => {
+  const s = parse(SAMPLE, LEAVES);
+  assert.equal(s.kind, "Fallback"); assert.equal(s.name, "root");
+  assert.equal(s.children.length, 2);
+  assert.deepEqual([s.children[0].kind, s.children[0].name, s.children[0].mode], ["Sequence", "low battery", "memory"]);
+  assert.deepEqual(s.children[0].children[0], { kind: "Condition", leaf: "BatteryBelow", args: ["30"], children: [] });
+  assert.deepEqual(s.children[1].children[0], { kind: "Action", leaf: "FlyTo", args: ["A"], children: [] });
+});
+t("parse: parallel threshold, decorators, comments and blank lines", () => {
+  const s = parse("=> 2 both\n\n  # a comment\n  retry 3\n    Charge\n  timeout 50\n    FlyTo A\n  !\n    BatteryBelow 20", LEAVES);
+  assert.equal(s.kind, "Parallel"); assert.equal(s.m, 2); assert.equal(s.name, "both");
+  assert.deepEqual(s.children.map((c) => c.dec), [{ type: "Retry", n: 3 }, { type: "Timeout", n: 50 }, { type: "Inverter", n: 0 }]);
+  assert.equal(s.children[0].children[0].leaf, "Charge");
+});
+t("format round trips the sample", () => {
+  assert.equal(format(parse(SAMPLE, LEAVES)), SAMPLE);
+});
+for (const [text, line, re] of [
+  ["? root\n  Nope 1", 2, /unknown leaf "Nope"/],
+  ["? root\n   FlyTo A", 2, /indent/],
+  ["-> a\n  retry 2\n    FlyTo A\n    Land", 4, /exactly one child/],
+  ["-> a\n  !", 2, /exactly one child/],
+  ["-> empty", 1, /no child/],
+  ["-> a\n  FlyTo A\n    Land", 3, /leaf cannot have children/],
+  ["-> a {sideways}\n  Land", 1, /mode/],
+  ["FlyTo A\n  Land", 2, /leaf cannot have children/],
+]) t(`parse error at line ${line}: ${re}`, () => {
+  assert.throws(() => parse(text, LEAVES), (e) => e instanceof ParseError && e.line === line && re.test(e.message));
+});
+
 console.log(failed ? `\n${failed} interpreter check(s) FAILED` : `\ninterpreter: ${passed} checks pass`);
 process.exit(failed ? 1 : 0);
