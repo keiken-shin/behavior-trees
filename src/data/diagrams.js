@@ -349,10 +349,10 @@ D["design/stack"] = () => {
 export function indexTree(lessons) {
   const spec = {
     kind: "Fallback", name: "the course", id: "root", children: [
-      { kind: "Sequence", name: "the tick", id: "a", children: lessons.slice(0, 2).map((l) => ({ kind: "Action", leaf: l.title.split(",")[0], id: l.id, children: [] })) },
-      { kind: "Sequence", name: "control", id: "b", children: lessons.slice(2, 6).map((l) => ({ kind: "Action", leaf: l.title.split(",")[0], id: l.id, children: [] })) },
-      { kind: "Sequence", name: "power", id: "c", children: lessons.slice(6, 10).map((l) => ({ kind: "Action", leaf: l.title.split(",")[0], id: l.id, children: [] })) },
-      { kind: "Sequence", name: "the world", id: "d", children: lessons.slice(10, 12).map((l) => ({ kind: "Action", leaf: l.title.split(",")[0], id: l.id, children: [] })) },
+      { kind: "Sequence", name: "the tick", id: "a", children: lessons.slice(0, 2).map((l) => ({ kind: "Action", leaf: l.short ?? l.title.split(",")[0], id: l.id, children: [] })) },
+      { kind: "Sequence", name: "control", id: "b", children: lessons.slice(2, 6).map((l) => ({ kind: "Action", leaf: l.short ?? l.title.split(",")[0], id: l.id, children: [] })) },
+      { kind: "Sequence", name: "power", id: "c", children: lessons.slice(6, 10).map((l) => ({ kind: "Action", leaf: l.short ?? l.title.split(",")[0], id: l.id, children: [] })) },
+      { kind: "Sequence", name: "the world", id: "d", children: lessons.slice(10, 12).map((l) => ({ kind: "Action", leaf: l.short ?? l.title.split(",")[0], id: l.id, children: [] })) },
     ],
   };
   const hrefs = Object.fromEntries(lessons.map((l) => [l.id, `#${l.id}`]));

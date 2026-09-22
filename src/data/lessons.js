@@ -89,7 +89,7 @@ export const LESSONS = [
   ],
 },
 {
-  id: "conditions", part: 1, title: "Conditions Only Ask",
+  id: "conditions", part: 1, title: "Conditions Only Ask", short: "Conditions",
   oneLiner: "A condition reads the world. It never writes it.",
   flow: [
     { t: "concrete", text: "Is the door open? You look. You do not open it a little to check. A condition that changes the thing it is checking is not a condition. It is an action that lies about what it is." },
@@ -205,7 +205,7 @@ export const LESSONS = [
   ],
 },
 {
-  id: "tree-or-machine", part: 1, title: "Tree or State Machine",
+  id: "tree-or-machine", part: 1, title: "Tree or State Machine", short: "Tree or Machine",
   oneLiner: "Same power. Different price for every extra way to change your mind.",
   flow: [
     { t: "concrete", text: "Directions as a list of turns versus directions as a map. The list is faster to follow and useless the moment a road is closed. The map costs more to read and survives the closure." },
