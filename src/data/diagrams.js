@@ -174,7 +174,7 @@ D["memory/modes"] = () => {
       "Same tree. The mode on the root is what changes below.",
       "Root reactive: the left branch is asked first, every tick. The check catches the drop.",
       "Root memory: the root's finger is on the delivery. The check is not asked. The drone flies on.",
-      "Root keep: the same on this tick. It differs at the answer that ends the walk: a Failure on a Sequence, a Success on a Fallback.",
+      "Root keep: the same here. It holds its memory across a Failure on a Sequence and a Success on a Fallback.",
     ],
     states: [
       tree(s, at),
@@ -223,7 +223,7 @@ D["parallel/m-of-n"] = () => {
     desc: "A Parallel with threshold 2 over three actions. Every child is ticked every tick. Land is Success at once and Hover is Running for ever, so the Parallel waits on Charge and answers Success the tick Charge finishes.",
     captions: [
       "Three children, threshold two.",
-      "Every child is ticked. Land is done at once; Hover never finishes, and Charge is still filling. One Success against a threshold of two: not there yet.",
+      "All three are ticked. Land is done at once, Hover never finishes, Charge is still filling. One Success of two.",
       "Charge finishes. Two Successes reach the threshold, so the Parallel answers Success. Hover is halted.",
     ],
     /* Run on a drone sitting at home with a flat battery, these are the only two

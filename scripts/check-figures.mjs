@@ -303,9 +303,19 @@ function audit(key, svg) {
     bad.push(`${caps.filter(Boolean).length} captions for ${states} states`);
   }
 
+  /* A caption is one line of a proportional face, so its width can only be
+     estimated here: 6.5 px a character is what the browser reports for Archivo
+     at 15 px over the captions this project actually ships. An estimate is
+     enough for the failure that matters - a sentence wider than its own plate,
+     which runs off both ends of the frame and cannot be seen at all. */
+  for (const [i, c] of caps.entries()) {
+    const px = c.length * 6.5;
+    if (px > vw - 40) bad.push(`caption ${i + 1} is about ${px.toFixed(0)} px wide on a ${vw} px frame; shorten it`);
+  }
+
   const all = marks(svg);
-  /* Captions are the one text in a proportional face, so their box is the
-     browser's to compute, not this script's; they are checked for presence. */
+  /* A caption's exact box is the browser's to compute, not this script's; here
+     it is checked for presence and for fitting the frame. */
   const drawn = all.filter((el) => el.state !== "cap");
   for (const el of drawn) {
     const b = el.box, e = 0.5;
