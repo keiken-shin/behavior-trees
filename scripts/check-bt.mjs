@@ -294,5 +294,30 @@ for (const [text, line, re] of [
   assert.throws(() => parse(text, LEAVES), (e) => e instanceof ParseError && e.line === line && re.test(e.message));
 });
 
+/* ── layout ────────────────────────────────────────────────────────────── */
+import { layout, labelOf } from "../src/bt/layout.js";
+t("layout: ids match build's pre-order numbering", () => {
+  const s = parse(SAMPLE, LEAVES);
+  const { nodes } = layout(s);
+  const tree = build(s, Object.fromEntries(Object.entries(LEAVES).map(([k, v]) => [k, { ...v, tick: () => S.SUCCESS }])));
+  assert.deepEqual(nodes.map((n) => n.id), tree.all.slice().sort((a, b) => Number(a.id.slice(1)) - Number(b.id.slice(1))).map((n) => n.id));
+});
+t("layout: a parent sits centred over its children, siblings do not overlap", () => {
+  const { nodes, edges } = layout(parse(SAMPLE, LEAVES));
+  const by = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  const root = by.n0, a = by.n1, b = by.n4;
+  assert.ok(Math.abs(root.x - (a.x + b.x) / 2) < 0.01);
+  assert.ok(a.x + a.w / 2 < b.x - b.w / 2);
+  assert.equal(edges.length, nodes.length - 1);
+  assert.ok(root.y < a.y && a.y < by.n2.y);
+});
+t("labelOf names a node by its name, else its symbol or leaf", () => {
+  assert.equal(labelOf({ kind: "Fallback", name: "root" }), "? root");
+  assert.equal(labelOf({ kind: "Sequence" }), "->");
+  assert.equal(labelOf({ kind: "Action", leaf: "FlyTo", args: ["A"] }), "FlyTo A");
+  assert.equal(labelOf({ kind: "Decorator", dec: { type: "Retry", n: 3 } }), "retry 3");
+  assert.equal(labelOf({ kind: "Parallel", m: 2 }), "=> 2");
+});
+
 console.log(failed ? `\n${failed} interpreter check(s) FAILED` : `\ninterpreter: ${passed} checks pass`);
 process.exit(failed ? 1 : 0);
