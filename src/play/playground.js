@@ -7,7 +7,7 @@ import { start, advance } from "../bt/run.js";
 import { parse, format, ParseError } from "../bt/parse.js";
 import { WORLDS } from "../data/plays.js";
 import { treeView } from "./tree-view.js";
-import { el, mark } from "../ui/util.js";
+import { el } from "../ui/util.js";
 
 const RATES = [1, 2, 5, 10, 30, 60];   // ticks per second on the slider
 
@@ -47,6 +47,7 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
     view.render(sim.spec);
     view.clear();
     lastPick = null; switches = 0; done = false;
+    if (cfg.counter) q(".pg__count b").textContent = "0";
     paintWorld(null);
   }
   function showErr(e) {
