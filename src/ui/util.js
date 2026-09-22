@@ -17,7 +17,7 @@ export const mark = (dir = "right") =>
 /* The raw store, and only the raw store. What an entry means - which steps a
    chapter asks for, which of them are done - is steps.js's business, so this
    file stays free of content data. */
-const KEY = "fd.progress";
+const KEY = "bt.progress";
 export const progress = () => {
   try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; }
 };
@@ -27,7 +27,7 @@ export const saveProgress = (p) => {
 
 /* The plate has two sides. Positive is ink on paper; negative is the same
    drawing on a light table. Auto follows the operating system. */
-const TKEY = "fd.plate";
+const TKEY = "bt.plate";
 export function applyPlate(mode) {
   const root = document.documentElement;
   if (mode === "auto") root.removeAttribute("data-plate");

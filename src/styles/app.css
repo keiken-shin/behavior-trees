@@ -700,7 +700,7 @@ button { font: inherit; color: inherit; }
 .node.st-ok rect, .node.st-ok ellipse, .node.st-ok polygon { stroke: var(--s-ok); fill: color-mix(in srgb, var(--s-ok) 22%, var(--paper)); }
 .node.st-fail rect, .node.st-fail ellipse, .node.st-fail polygon { stroke: var(--s-fail); fill: color-mix(in srgb, var(--s-fail) 22%, var(--paper)); }
 .node.st-run rect, .node.st-run ellipse, .node.st-run polygon { stroke: var(--s-run); fill: color-mix(in srgb, var(--s-run) 26%, var(--paper)); }
-.node.dirty ellipse { fill: url(#hatch); }
+.node.dirty ellipse { fill: url(#hatch); } .tree-live .node.dirty ellipse { fill: url(#hatch-live); }
 .hatch { stroke: var(--s-fail); stroke-width: 1; }
 .edge { stroke: var(--ink-3); stroke-width: var(--w-rule); }
 .pulse { fill: var(--s-tick); }
@@ -826,3 +826,35 @@ button { font: inherit; color: inherit; }
 .credits__list .c-rem { font-size: 13.5px; }
 .credits__foot { margin-top: 22px; }
 .credits__foot code { font-family: var(--f-mono); font-size: 13px; color: var(--ink); }
+
+/* ── the playground ──────────────────────────────────────────────────────── */
+.play { margin: 28px 0; border: var(--w-rule) solid var(--ink); }
+.play__cap { display: flex; justify-content: space-between; padding: 6px 10px; border-bottom: var(--w-hair) solid var(--rule);
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.pg { padding: 12px; }
+.pg__brief { margin: 0 0 12px; color: var(--ink-2); }
+.pg__panes { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; align-items: start; }
+.pg__tree svg { width: 100%; height: auto; }
+.pg__bar, .pg__switches, .pg__hazards { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+.pg button { font-family: var(--f-mono); font-size: 12px; padding: 6px 10px; background: var(--paper); color: var(--ink);
+  border: var(--w-rule) solid var(--ink); border-radius: 0; cursor: pointer; }
+.pg button:hover { background: var(--paper-sunk); }
+.pg .pg__var.on { background: var(--ink); color: var(--paper); }
+.pg__rate, .pg__mode { font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); display: inline-flex; gap: 6px; align-items: center; }
+.pg__rate input { width: 90px; accent-color: var(--accent); }
+.pg__tick, .pg__count { font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); margin-left: auto; }
+.pg__tick i { font-style: normal; color: var(--ink); }
+.pg__goal { margin-top: 12px; padding: 8px 10px; border: var(--w-rule) solid var(--s-ok); font-size: 14px; }
+.pg__board { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.pg__bb, .pg__log { font-family: var(--f-mono); font-size: 11px; border-collapse: collapse; width: 100%; }
+.pg__bb th, .pg__log th { text-align: left; color: var(--ink-3); font-weight: 500; padding: 2px 6px 2px 0; }
+.pg__bb td, .pg__log td { padding: 2px 6px 2px 0; border-top: var(--w-hair) solid var(--rule-soft); }
+.pg__edit textarea { width: 100%; font-family: var(--f-mono); font-size: 13px; padding: 8px; margin-top: 12px;
+  background: var(--paper-sunk); color: var(--ink); border: var(--w-hair) solid var(--rule); resize: vertical; }
+.pg__err { color: var(--s-fail); font-family: var(--f-mono); font-size: 12px; }
+.tree-live .node.err rect, .tree-live .node.err ellipse { stroke-dasharray: 3 2; }
+.fact { border-left: var(--w-line) solid var(--ink); padding-left: 12px; color: var(--ink-2); }
+@media (max-width: 1020px) {
+  .pg__panes, .pg__board { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .pg__tree svg * { transition: none; } }

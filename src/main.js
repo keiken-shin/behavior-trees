@@ -1,5 +1,6 @@
 import "./styles/app.css";
-import { logoSvg, faviconDataUri } from "./ui/logo.js";
-document.getElementById("app").innerHTML = `<h1 class="t-display">${logoSvg({ size: 40 })} Behavior Trees</h1>`;
-document.querySelector('link[rel="icon"]').href = faviconDataUri();
+import { LESSONS } from "./data/lessons.js";
+import { renderLesson } from "./ui/lesson.js";
 document.getElementById("boot")?.classList.add("gone");
+renderLesson(document.getElementById("app"), location.hash.slice(1) || LESSONS[0].id);
+addEventListener("hashchange", () => renderLesson(document.getElementById("app"), location.hash.slice(1) || LESSONS[0].id));
