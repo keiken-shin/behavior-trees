@@ -1,0 +1,89 @@
+/* ── Illustrated Parts Catalogue - token layer ────────────────────────────
+ *
+ * Two palettes that must never be confused:
+ *
+ *   CHROME is achromatic. Paper, ink, grey, and exactly one accent - chart
+ *   magenta, borrowed from the airspace rings on a sectional. Magenta appears
+ *   nowhere in the semantic set, so the interface can never be mistaken for data.
+ *
+ *   SEMANTIC colour carries meaning and nothing else: the semantic colours are
+ *   answers a node gives, and nothing else. Because the chrome spends none,
+ *   these are the only colours on the page, and the tree's state glows.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* chrome - the plate itself */
+  --paper:      #f4f4f1;   /* index stock */
+  --paper-sunk: #eceae5;   /* recessed wells, table stripes */
+  --ink:        #14171c;   /* linework and type */
+  --ink-2:      #454b55;   /* secondary type */
+  --ink-3:      #6b7079;   /* tertiary - 4.5:1 on paper; the small mono labels
+                              live here, so it may not go lighter */
+  --rule:       #c9c7c0;   /* hairline borders */
+  --rule-soft:  #dedcd5;   /* zone grid, table interior */
+  --accent:     #d6006e;   /* chart magenta - the entire colour budget */
+  --accent-ink: #ffffff;   /* type on accent */
+
+  /* semantic - an answer, never a kind. content/visual-grammar.md section 1 */
+  --s-ok:   #2f9e44;   /* Success */
+  --s-fail: #e03131;   /* Failure */
+  --s-run:  #c77800;   /* Running */
+  --s-tick: #0c8599;   /* the tick, travelling down an edge */
+  --ref:    #8a8f98;
+
+  /* line weights - three, and only three */
+  --w-hair: 0.5px;
+  --w-rule: 1px;
+  --w-line: 1.5px;
+
+  /* type */
+  /* The plate's lettering is an ultra-condensed heavy grotesque. Archivo at
+     normal width is a different character and wraps the headline - the
+     condensed cut is the face, not a nicety. */
+  --f-display: "Archivo Narrow", "Archivo Variable", system-ui, sans-serif;
+  --f-body:    "Archivo Variable", "Archivo", system-ui, sans-serif;
+  --f-mono:    "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+
+  /* rhythm - 8px base, everything is a multiple */
+  --u: 8px;
+  --gutter: 40px;
+  --margin-rail: 34px;    /* the zone-grid margin down each side */
+  /* Air between the zone rail and the drawing it indexes. Without it the frame
+     padding equals the rail width exactly and the type butts against the rail's
+     hairline - a drafting margin with no margin in it. */
+  --rail-gap: 18px;
+
+  /* motion */
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  --dur: 420ms;
+  --dur-fast: 160ms;
+}
+
+/* Dark is not a generic inversion - it is the NEGATIVE PLATE: the same drawing
+   seen on a light table, white line on black. Same document, other side of the
+   paper. Duplicated rather than indirected through a second variable layer,
+   because two readable blocks beat one clever one. */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-plate="positive"]) {
+    color-scheme: dark;
+    --paper: #101318; --paper-sunk: #171b21;
+    --ink: #eceae5; --ink-2: #a8adb6; --ink-3: #7d838d;
+    --rule: #333942; --rule-soft: #232830;
+    --accent: #ff2d8e; --accent-ink: #101318;
+    --s-ok: #51cf66; --s-fail: #ff6b6b; --s-run: #ffd43b; --s-tick: #22b8cf; --ref: #6c727c;
+  }
+}
+
+/* The explicit attribute wins in both directions, so the toggle works
+   regardless of the operating system setting. */
+:root[data-plate="negative"] {
+  color-scheme: dark;
+  --paper: #101318; --paper-sunk: #171b21;
+  --ink: #eceae5; --ink-2: #a8adb6; --ink-3: #7d838d;
+  --rule: #333942; --rule-soft: #232830;
+  --accent: #ff2d8e; --accent-ink: #101318;
+  --s-ok: #51cf66; --s-fail: #ff6b6b; --s-run: #ffd43b; --s-tick: #22b8cf; --ref: #6c727c;
+}

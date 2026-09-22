@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Behavior Trees</title>
+<!-- Replaced at boot with the drawn mark; this inline copy is what shows before
+     the module runs, so the tab never flashes a blank page icon. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cstyle%3E.m%7Bfill%3A%2314171c%3Bstroke%3A%2314171c%7D%40media(prefers-color-scheme%3Adark)%7B.m%7Bfill%3A%23eceae5%3Bstroke%3A%23eceae5%7D%7D%3C%2Fstyle%3E%3Cpath%20class%3D%22m%22%20fill%3D%22none%22%20d%3D%22M12%207%20L12%2011%20L5%2011%20L5%2015%20M12%2011%20L19%2011%20L19%2015%22%20stroke-width%3D%221.3%22%2F%3E%3Crect%20x%3D%229%22%20y%3D%222%22%20width%3D%226%22%20height%3D%225%22%20class%3D%22m%22%20stroke%3D%22none%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%2215%22%20width%3D%226%22%20height%3D%225%22%20class%3D%22m%22%20stroke%3D%22none%22%2F%3E%3Crect%20x%3D%2216%22%20y%3D%2215%22%20width%3D%226%22%20height%3D%225%22%20class%3D%22m%22%20stroke%3D%22none%22%2F%3E%3C%2Fsvg%3E">
+<meta name="description" content="Behavior trees taken apart - twelve ideas in the order they make sense, each one naming the thing you probably believe that isn't true, with a playground where you edit a drone's mind and watch it fly.">
+<meta name="color-scheme" content="light dark">
+<style>
+/* The plate is drawn before it is shown.
+   Every page here renders from script and letters itself with web fonts, so
+   uncovered the reader gets three states in a row: an empty frame, then the
+   whole document in fallback type, then every line of it reflowing as the real
+   faces land. The cover holds until both the first render and the fonts are
+   done, which turns three jumps into one appearance.
+   Inline, literal, and font-free on purpose - the stylesheet it would otherwise
+   borrow tokens from is loaded by the very module this is covering for, and any
+   lettering here would itself be a thing that reflows. The mark is the same
+   geometry as the favicon, drawn rather than set. */
+#boot {
+  position: fixed; inset: 0; z-index: 99;
+  display: grid; place-content: center; justify-items: center; gap: 20px;
+  background: #f4f4f1;
+  transition: opacity 240ms cubic-bezier(.16, 1, .3, 1);
+}
+#boot.gone { opacity: 0; pointer-events: none; }
+#boot svg { fill: #14171c; stroke: #14171c; }
+/* Drawn opaque, with no fade-in. main.js holds the cover for a floor of 900ms on
+   a full page load, so there is no longer a blink to protect against - and an
+   opacity that starts at 0 and is raised by an animation is invisible wherever
+   animations are not advancing, which includes a page loaded in a background
+   tab. Nothing here may depend on motion having run in order to be seen. */
+/* An indeterminate rule, in the accent, sweeping the width of the mark. It says
+   "working" without claiming a percentage it cannot know. One pass is shorter
+   than the cover's floor, so a fast load still shows a whole one rather than
+   cutting the sweep off halfway. */
+#boot i { position: relative; display: block; width: 92px; height: 2px; background: #dedcd5; overflow: hidden; }
+#boot i::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%;
+  background: #d6006e; animation: boot-sweep 820ms cubic-bezier(.4, 0, .6, 1) infinite;
+}
+@keyframes boot-sweep { from { transform: translateX(-110%); } to { transform: translateX(360%); } }
+@media (prefers-color-scheme: dark) {
+  #boot { background: #101318; }
+  #boot svg { fill: #eceae5; stroke: #eceae5; }
+  #boot i { background: #232830; }
+  #boot i::after { background: #ff2d8e; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The sweep becomes the whole rule, drawn and still: the loader is a state
+     that has to be legible without any motion at all. */
+  #boot i::after { animation: none; width: 100%; }
+}
+</style>
+</head>
+<body>
+<div id="boot" aria-hidden="true">
+  <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true">
+    <path d="M12 7 L12 11 L5 11 L5 15 M12 11 L19 11 L19 15"
+    stroke-width="1" fill="none" opacity=".7"/><rect x="9" y="2" width="6" height="5" fill="currentColor"/><rect x="2" y="15" width="6" height="5" fill="currentColor"/><rect x="16" y="15" width="6" height="5" fill="currentColor"/>
+  </svg>
+  <i></i>
+</div>
+<div class="plate-frame">
+  <main id="app"></main>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

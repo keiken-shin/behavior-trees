@@ -1,0 +1,15 @@
+# Secrets. .env holds the YouTube Data API key; .env.example is the template
+# and IS tracked.
+.env
+.env.local
+
+# Dependencies and build output - both reproducible from package-lock.json.
+node_modules/
+dist/
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
