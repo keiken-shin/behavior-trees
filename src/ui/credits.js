@@ -139,15 +139,15 @@ export function renderCredits(root) {
      one is the other half of the promise: every claim in a chapter carries a
      source that was opened, and here is the whole set, in the file's own order,
      each row under the id its superscript shows. */
-  const SOURCES = SOURCE_FILE.sources;
-  const ids = Object.keys(SOURCES);
+  const cited = SOURCE_FILE.sources;
+  const ids = Object.keys(cited);
   body.appendChild(el("h2", "t-h2 cards__h2", "Every source the chapters cite"));
   body.appendChild(el("p", "cards__note",
     `${ids.length} of them. The small id after a fact or a myth in a chapter is the ` +
     `id in the right hand column here. Under each title is how far the source can be ` +
     `trusted, and then exactly what was opened and read.`));
   ids.forEach((id) => {
-    const s = SOURCES[id];
+    const s = cited[id];
     const c = el("div", "src");
     c.id = id;
     c.innerHTML =
