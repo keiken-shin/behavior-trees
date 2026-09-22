@@ -71,7 +71,7 @@ export function step(s, dt = DT) {
     s.x += s.wind.x * dt;
     s.y += s.wind.y * dt;
     s.battery = Math.max(0, s.battery - DRAIN * dt);
-    if (s.battery <= 0) { s.dead = true; s.target = null; }
+    if (s.battery <= 0) { s.dead = true; s.target = null; s.targetBy = null; }
     if (s.track.length === 0 || dist(s.track[s.track.length - 1], s) > 1) s.track.push({ x: s.x, y: s.y });
   } else if (s.charging) {
     s.battery = Math.min(100, s.battery + CHARGE_RATE * dt);
