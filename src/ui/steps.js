@@ -51,7 +51,7 @@ export function markStep(id, key) {
   p[id] = { ...(p[id] || {}), [key]: true };
   saveProgress(p);
   /* Three different places mark steps - the player on ENDED, the stage check on
-     a correct answer, the sandbox when its goal latches - and two of them are
+     a correct answer, the playground when its goal latches - and two of them are
      inside a modal covering the page. Rather than each one knowing who to tell,
      the store announces and whoever is showing the list repaints. */
   document.dispatchEvent(new CustomEvent("bt:progress", { detail: { id, key } }));

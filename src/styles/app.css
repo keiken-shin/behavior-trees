@@ -643,7 +643,7 @@ button { font: inherit; color: inherit; }
 .mk-h { fill: currentColor; stroke: none; }
 
 /* footer nav */
-/* Below the grid rather than inside the reading column, and after the sandbox:
+/* Below the grid rather than inside the reading column, and after the playground:
    read the chapter, fly it, then leave. Held to the reading column like the
    launch strip above it, so the two share a right edge - left full width, the
    dashed index box inflates to fill a whole screen and the three links drift so

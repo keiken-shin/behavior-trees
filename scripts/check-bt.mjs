@@ -304,6 +304,8 @@ for (const [text, line, re] of [
   ["-> empty", 1, /no child/],
   ["-> a\n  FlyTo A\n    Land", 3, /leaf cannot have children/],
   ["-> a {sideways}\n  Land", 1, /mode/],
+  ["=> 2 both {memory}\n  Land\n  Charge", 1, /a mode only belongs on -> or \?/],
+  ["retry 2 {memory}\n  Land", 1, /a mode only belongs on -> or \?/],
   ["FlyTo A\n  Land", 2, /leaf cannot have children/],
 ]) t(`parse error at line ${line}: ${re}`, () => {
   assert.throws(() => parse(text, LEAVES), (e) => e instanceof ParseError && e.line === line && re.test(e.message));

@@ -1,7 +1,7 @@
 /* Draws a tree as SVG and repaints it from a trace. Layout comes from
    layout.js, shapes from svg.js, so this is the plate primitives made live. */
 import { layout } from "../bt/layout.js";
-import { node, edge } from "../data/svg.js";
+import { node, edge, esc } from "../data/svg.js";
 
 const ST = { Success: "ok", Failure: "fail", Running: "run" };
 
@@ -20,14 +20,21 @@ export function treeView(host) {
       byId = new Map([...svg.querySelectorAll("g[data-id]")].map((g) => [g.dataset.id, g]));
     },
     paint(trace) {
-      for (const g of byId.values()) { g.classList.remove("st-ok", "st-fail", "st-run", "dirty", "err"); g.classList.add("st-idle"); }
+      for (const g of byId.values()) {
+        g.classList.remove("st-ok", "st-fail", "st-run", "dirty", "err");
+        g.classList.add("st-idle");
+        /* An error inserts a title of its own. Taking it out here is what lets a
+           node whose error has cleared stop describing it, and leaves whatever
+           title the node was drawn with in place. */
+        g.querySelector("title.err-t")?.remove();
+      }
       for (const t of trace) {
         const g = byId.get(t.id);
         if (!g) continue;
         g.classList.remove("st-idle");
         g.classList.add(`st-${ST[t.status] ?? "idle"}`);
         if (t.dirty) g.classList.add("dirty");
-        if (t.error) { g.classList.add("err"); g.querySelector("title")?.remove(); g.insertAdjacentHTML("afterbegin", `<title>${t.error}</title>`); }
+        if (t.error) { g.classList.add("err"); g.insertAdjacentHTML("afterbegin", `<title class="err-t">${esc(t.error)}</title>`); }
       }
     },
     clear() { this.paint([]); },

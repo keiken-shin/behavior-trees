@@ -351,7 +351,7 @@ export function renderLesson(root, id) {
      the full width honestly.
 
      Order matters too: read the chapter, fly it, then leave. The footer nav used
-     to sit above the sandbox inside the reading column, which put "next chapter"
+     to sit above the playground inside the reading column, which put "next chapter"
      before the thing the chapter was building toward. */
   const apply = el("div", "apply");
   const after = el("div", "after");
@@ -359,7 +359,7 @@ export function renderLesson(root, id) {
   /* ── what this chapter still wants ──
      The rule used to be invisible and, worse, wrong: one click on any stage-check
      option - right or wrong - silently marked the whole chapter complete, while
-     watching the clip and flying the sandbox counted for nothing at all. A reader
+     watching the clip and flying the playground counted for nothing at all. A reader
      who did the work and watched the index stay empty had no way to find out why.
 
      So the requirements are stated where the chapter ends, they tick over as they

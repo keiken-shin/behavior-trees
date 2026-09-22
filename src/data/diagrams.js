@@ -2,7 +2,7 @@
    Colour is never named here, only an answer, so the colour rule holds by
    construction. Trees are written in the text form and laid out by layout.js,
    so a plate and the playground can never disagree about a tree's shape. */
-import { figure, tree, chip, note, craft, line, dashed } from "./svg.js";
+import { figure, tree, chip, note, line, dashed } from "./svg.js";
 import { parse } from "../bt/parse.js";
 import { DRONE } from "../world/drone.js";
 import { nav2ToSpec } from "../bt/nav2.js";
@@ -14,7 +14,7 @@ const D = {};
 /* Leaves are classified so the plate draws an ellipse for a condition. The
    drone's real leaves plus the few invented for a figure. */
 const FIG_LEAVES = { ...DRONE.leaves,
-  NudgedNorth: { kind: "condition" }, Delivered: { kind: "condition" }, SetMode: { kind: "action" } };
+  NudgedNorth: { kind: "condition" }, SetMode: { kind: "action" } };
 const T = (text) => parse(text, FIG_LEAVES);
 
 D["tick/root-to-leaf"] = () => {

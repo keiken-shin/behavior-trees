@@ -42,11 +42,10 @@ const FS = (cls) => (cls.has("note") ? 12
 const ADV = 0.6, ASC = 1.02, DESC = 0.3;   // JetBrains Mono em metrics
 
 /* ── transforms ───────────────────────────────────────────────────────────
-   airfoil() and aircraft() draw in local coordinates and place the result with
-   a transform - an airfoil's own points are legitimately negative. Composing
-   the matrix is the only way to tell that apart from a mark that has genuinely
-   fallen off the plate, so the transform is applied rather than the element
-   excused. */
+   A builder may draw in local coordinates and place the result with a transform,
+   so a mark's own points are legitimately outside the plate. Composing the matrix
+   is the only way to tell that apart from a mark that has genuinely fallen off
+   it, so the transform is applied rather than the element excused. */
 const I = [1, 0, 0, 1, 0, 0];                       // a b c d e f
 const mul = (m, o) => [
   m[0] * o[0] + m[2] * o[1], m[1] * o[0] + m[3] * o[1],

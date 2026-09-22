@@ -68,7 +68,7 @@ function route({ meta, index }) {
      document you are leaving before the one you asked for appears. */
   scrollTo({ top: 0, behavior: "instant" });
   stopCheckride();                    // never leave a checkride running offscreen
-  stopLesson();                       // nor a sandbox, which would sit over the next page
+  stopLesson();                       // nor a playground, which would sit over the next page
   if (id === "cards") {
     meta.textContent = "Revision";
     renderCards(app);

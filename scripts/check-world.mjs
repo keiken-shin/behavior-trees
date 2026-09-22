@@ -63,6 +63,7 @@ t("conditions answer without mutating", () => {
   assert.equal(tickLeaf("GoalIs", s, ["A"]), S.SUCCESS);
   assert.equal(tickLeaf("WindAbove", s, ["1"]), S.FAILURE);
   assert.equal(tickLeaf("Landed", s), S.SUCCESS);
+  assert.equal(tickLeaf("Delivered", s), S.FAILURE);
   assert.equal(s.mutations, m, "no condition may bump the mutation counter");
   for (const [n, l] of Object.entries(DRONE.leaves)) assert.ok(l.doc, `${n} has a one line doc`);
 });
@@ -102,6 +103,10 @@ t("Drop: Success only at the goal waypoint, and it marks the delivery", () => {
   assert.equal(tickLeaf("Drop", s), S.FAILURE);
   Object.assign(s, s.waypoints.A);
   assert.equal(tickLeaf("Drop", s), S.SUCCESS); assert.equal(s.delivered, true);
+  /* The design plate draws its whole tree on Delivered, over a playground with
+     the editor open, so a reader who copies the plate must get a tree that
+     builds and answers. */
+  assert.equal(tickLeaf("Delivered", s), S.SUCCESS);
 });
 t("ExitNoFly: Running while inside a zone, Success once outside", () => {
   const s = DRONE.init("delivery"); s.landed = false;

@@ -24,6 +24,26 @@ export function advance(sim, hazard) {
   return { status, trace };
 }
 
+/* How often the root changed its mind: the branch that decided the root's
+   answer, counted tick over tick. A trace is post-order - a node is pushed after
+   its children - so the LAST root child in one tick's trace is the one whose
+   answer the root returned. Takes a history (entries with a trace) or a list of
+   traces. Chapter 11's goal and the counter on the screen both call this; they
+   used to be two implementations that agreed only because n1 and n5 happened to
+   be the root's children in that one tree text. */
+export function switchCount(ticks, rootChildIds) {
+  const ids = new Set(rootChildIds);
+  let prev = null, count = 0;
+  for (const x of ticks) {
+    let chosen = null;
+    for (const n of x.trace ?? x) if (ids.has(n.id)) chosen = n.id;
+    if (chosen === null) continue;
+    if (prev !== null && chosen !== prev) count++;
+    prev = chosen;
+  }
+  return count;
+}
+
 export function run({ world, scenario = "delivery", tree, script = [], ticks = 1000, until }) {
   const sim = start({ world, scenario, tree });
   const byTick = new Map();

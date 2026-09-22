@@ -4,8 +4,8 @@
    Simple by design: every subtree is as wide as its children side by side, and
    a parent is centred over them. Trees in this course are small. */
 
-const SYM = { Sequence: "->", Fallback: "?", Parallel: "=>" };
-const DSYM = { Inverter: "!", Retry: "retry", Timeout: "timeout", Repeat: "repeat" };
+export const SYM = { Sequence: "->", Fallback: "?", Parallel: "=>" };
+export const DSYM = { Inverter: "!", Retry: "retry", Timeout: "timeout", Repeat: "repeat" };
 
 export function labelOf(s) {
   if (s.kind === "Custom" || (s.kind === "Decorator" && s.dec?.type === "Custom")) return s.name ?? s.leaf;

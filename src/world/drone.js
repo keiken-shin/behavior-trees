@@ -112,6 +112,7 @@ export const leaves = {
   GoalIs: cond("the goal is waypoint NAME", (s, [n]) => s.goal === n),
   WindAbove: cond("wind speed above N m/s", (s, [n]) => Math.hypot(s.wind.x, s.wind.y) > Number(n)),
   Landed: cond("on the ground", (s) => s.landed),
+  Delivered: cond("the parcel has been dropped at the goal", (s) => s.delivered),
 
   FlyTo: { kind: "action", doc: "fly to waypoint NAME (or Goal); Running until there",
     tick: (s, bb, [n], node) => flyTo(s, resolve(s, n), node), halt: clearTarget },

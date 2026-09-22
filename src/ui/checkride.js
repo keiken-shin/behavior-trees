@@ -142,9 +142,7 @@ export function renderCheckride(root) {
     d.innerHTML =
       `<div class="card__cap"><span>Result</span><span>${passedItems.size} of ${EXAM.length}</span></div>` +
       `<div class="card__q">Checkride complete.</div>` +
-      `<div class="card__a">You cut a delivery for a battery, got out of a zone in thirty ticks, ` +
-      `followed a goal that moved, and knew when memory was right. None of that was a multiple ` +
-      `choice question.</div>`;
+      `<div class="card__a">${didWhat(passedItems)}</div>`;
     body.appendChild(d);
     const again = el("button", "cards__go2", `<span>Sit it again</span>${mark()}`);
     again.type = "button";
@@ -155,6 +153,23 @@ export function renderCheckride(root) {
     acts.append(home, again);
     body.appendChild(acts);
   }
+}
+
+/* What the card may say you did. Built from the items actually passed, because
+   telling a reader who scored nothing that they followed a moving goal is the
+   one thing a judged exam may not do. */
+const DID = [
+  "wrote a delivery that came home and landed",
+  "cut a delivery for a battery and got the drone down alive",
+  "got out of a no fly zone inside thirty ticks",
+  "followed a goal that moved after you launched",
+  "knew when memory was the right answer",
+];
+function didWhat(passed) {
+  const did = DID.filter((_, i) => passed.has(i));
+  if (!did.length) return "Nothing met this time. Every item is still open, and the trees are still yours to write.";
+  const list = did.length === 1 ? did[0] : `${did.slice(0, -1).join(", ")} and ${did[did.length - 1]}`;
+  return `You ${list}. None of that was a multiple choice question.`;
 }
 
 /* The way in, at the foot of the index. */

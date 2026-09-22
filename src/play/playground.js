@@ -3,7 +3,7 @@
    injects hazards, and (in the checkride and chapter 12) edits the tree as
    text. Nothing here knows it is a drone: `cfg.world` names a WORLDS entry
    and everything the playground needs comes off that object. */
-import { start, advance } from "../bt/run.js";
+import { start, advance, switchCount } from "../bt/run.js";
 import { parse, format, ParseError } from "../bt/parse.js";
 import { WORLDS } from "../data/plays.js";
 import { treeView } from "./tree-view.js";
@@ -15,7 +15,10 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   const world = WORLDS[cfg.world];
   const leaves = { ...world.leaves, ...(cfg.extraLeaves ?? {}) };
   const W = { ...world, leaves };
-  let text = cfg.tree, sim = null, timer = null, rate = 10, done = false, lastPick = null, switches = 0;
+  /* lastStatus is the interpreter's last answer. A hazard press repaints the
+     world without ticking, and painting "Idle" there would put a status on the
+     screen that the interpreter never returned. */
+  let text = cfg.tree, sim = null, timer = null, rate = 10, done = false, lastStatus = null;
 
   host.innerHTML =
     `<div class="pg">` +
@@ -46,7 +49,7 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
     cfg.start?.(sim.state);
     view.render(sim.spec);
     view.clear();
-    lastPick = null; switches = 0; done = false;
+    lastStatus = null; done = false;
     if (cfg.counter) q(".pg__count b").textContent = "0";
     paintWorld(null);
   }
@@ -60,14 +63,10 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
     hazard = [hazard, ...scripted].filter(Boolean);
     const { status, trace } = advance(sim, hazard);
     view.paint(trace);
+    lastStatus = status;
     if (cfg.counter) {
-      /* The trace is post-order (a node is pushed after its children), so the
-         LAST root child in it is the branch that decided the root's answer. */
-      const kids = new Set(sim.bt.root.children.map((c) => c.id));
-      const pick = [...trace].reverse().find((t) => kids.has(t.id))?.id ?? null;
-      if (lastPick !== null && pick !== lastPick) switches++;
-      lastPick = pick;
-      q(".pg__count b").textContent = String(switches);
+      q(".pg__count b").textContent =
+        String(switchCount(sim.history, sim.bt.root.children.map((c) => c.id)));
     }
     paintWorld(status);
     if (!done && cfg.goal?.test(sim.state, sim.history)) {
@@ -106,7 +105,18 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   const sw = q(".pg__switches");
   (cfg.variants ?? []).forEach((v, i) => {
     const b = el("button", "pg__var" + (i === 0 ? " on" : ""), v.label); b.type = "button";
-    b.onclick = () => { sw.querySelectorAll(".pg__var").forEach((x) => x.classList.remove("on")); b.classList.add("on"); text = v.tree; if (q("textarea")) q("textarea").value = text; boot(); };
+    b.onclick = () => {
+      sw.querySelectorAll(".pg__var").forEach((x) => x.classList.remove("on"));
+      b.classList.add("on");
+      text = v.tree;
+      if (q("textarea")) q("textarea").value = text;
+      /* The mode select is a view of the root's mode, so a variant that carries
+         its own mode has to move it. Chapter 7 is the one chapter with both
+         controls, and it could read "memory" over a tree that is reactive. */
+      const sel = q(".pg__mode select");
+      if (sel) sel.value = parse(text, leaves).mode ?? "reactive";
+      boot();
+    };
     sw.appendChild(b);
   });
   if (cfg.modes) {
@@ -122,7 +132,7 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   (cfg.hazards ?? []).forEach((id) => {
     const h = W.hazards.find((x) => x.id === id); if (!h) return;
     const b = el("button", "pg__hz", h.label); b.type = "button";
-    b.onclick = () => { if (!sim) return; h.apply(sim.state); paintWorld(null); };
+    b.onclick = () => { if (!sim) return; h.apply(sim.state); paintWorld(lastStatus); };
     hz.appendChild(b);
   });
   /* editor */

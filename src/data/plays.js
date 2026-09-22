@@ -3,6 +3,9 @@
    hazards shown, whether the editor is open, and the goal that marks the
    chapter's "make it happen" step. Filled in by the chapter tasks. */
 import { DRONE } from "../world/drone.js";
+import { build } from "../bt/tree.js";
+import { parse } from "../bt/parse.js";
+import { switchCount } from "../bt/run.js";
 export const WORLDS = { drone: DRONE };
 export const PLAYS = {};
 export const hasPlay = (id) => Object.hasOwn(PLAYS, id);
@@ -98,25 +101,16 @@ PLAYS["blackboard/goal"] = {
   ],
   goal: { test: (s) => s.delivered && s.goalMoves > 0, done: "Delivered to the moved goal, because the tree read it instead of remembering it." },
 };
-/* The root's two direct children, in pre-order: n1 (low battery) and n5 (deliver). */
-function switches(h) {
-  const ids = ["n1", "n5"];
-  let prev = null, count = 0;
-  for (const x of h) {
-    let chosen = null;
-    for (const n of x.trace) if (ids.includes(n.id)) chosen = n.id;
-    if (chosen !== null) {
-      if (prev !== null && chosen !== prev) count++;
-      prev = chosen;
-    }
-  }
-  return count;
-}
+/* Read off the built tree rather than typed in: hardcoding n1 and n5 made the
+   goal agree with the counter on screen only by luck, and silently stop agreeing
+   the moment anyone edited the text above. */
+const rootKids = (text) => build(parse(text, DRONE.leaves), DRONE.leaves).root.children.map((c) => c.id);
+const PREEMPT_KIDS = rootKids(PREEMPT);
 PLAYS["fsm/transitions"] = {
   world: "drone", scenario: "delivery", hazards: ["battery12"], counter: true,
   brief: "The chapter 6 tree again, with a counter of how many times control moved between branches.",
   tree: PREEMPT,
-  goal: { test: (s, h) => switches(h) >= 3, done: "Three switches. Every one would be a drawn transition in a state machine. This tree keeps switching at the 30 percent line: charging lifts the battery above it, the flight drops it back below." },
+  goal: { test: (s, h) => switchCount(h, PREEMPT_KIDS) >= 3, done: "Three switches. Every one would be a drawn transition in a state machine. This tree keeps switching at the 30 percent line: charging lifts the battery above it, the flight drops it back below." },
 };
 PLAYS["design/mission"] = {
   world: "drone", scenario: "delivery", hazards: ["battery12", "gust", "calm", "nofly", "goalB"], editor: true,

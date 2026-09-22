@@ -12,6 +12,11 @@
  * course has exactly one way to write a tree.
  */
 
+/* The symbols a node is written with. They live in layout.js because a drawn
+   tree needs them too, and two copies of this table is two chances to disagree
+   about what a Parallel is called. */
+import { SYM, DSYM } from "./layout.js";
+
 export class ParseError extends Error {
   constructor(line, message) { super(`line ${line}: ${message}`); this.line = line; }
 }
@@ -31,12 +36,15 @@ function head(text, no) {
   const [w0, ...rest] = words;
   if (w0 === "->") return { kind: "Sequence", name: rest.join(" ") || undefined, mode, children: [] };
   if (w0 === "?") return { kind: "Fallback", name: rest.join(" ") || undefined, mode, children: [] };
+  /* Below the mode check, not above it: a Parallel has no mode, and reading one
+     off a => line and dropping it silently was the one misplaced mode this
+     parser accepted. */
+  if (mode) throw new ParseError(no, "a mode only belongs on -> or ?");
   if (w0 === "=>") {
     const m = Number(rest[0]);
     if (!Number.isInteger(m) || m < 1) throw new ParseError(no, "a Parallel needs a whole number threshold, like => 2");
     return { kind: "Parallel", m, name: rest.slice(1).join(" ") || undefined, children: [] };
   }
-  if (mode) throw new ParseError(no, "a mode only belongs on -> or ?");
   if (DECOS[w0]) {
     let n = 0;
     if (w0 !== "!") {
@@ -101,9 +109,6 @@ function check(root, lines) {
       throw new ParseError(no, "a decorator takes exactly one child");
   });
 }
-
-const SYM = { Sequence: "->", Fallback: "?", Parallel: "=>" };
-const DSYM = { Inverter: "!", Retry: "retry", Timeout: "timeout", Repeat: "repeat" };
 
 export function format(spec, depth = 0) {
   const pad = "  ".repeat(depth);
