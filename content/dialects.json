@@ -1,0 +1,21 @@
+{
+  "$comment": "The lookup appendix. One row per concept, one cell per dialect, each cell's source named. Not a lesson; the deck never sees it.",
+  "columns": [
+    { "id": "book", "title": "Textbook", "src": "book" },
+    { "id": "btcpp", "title": "BehaviorTree.CPP", "src": "btcpp-basics" },
+    { "id": "ue", "title": "Unreal Engine", "src": "ue-overview" },
+    { "id": "unity", "title": "Unity Behavior", "src": "unity" },
+    { "id": "limbo", "title": "Godot LimboAI", "src": "limbo" }
+  ],
+  "rows": [
+    { "concept": "Try children until one succeeds", "book": "Fallback", "btcpp": "Fallback, ReactiveFallback", "ue": "Selector", "unity": "Try In Order", "limbo": "BTSelector, BTDynamicSelector" },
+    { "concept": "Run children in order until one fails", "book": "Sequence", "btcpp": "Sequence, ReactiveSequence, SequenceWithMemory", "ue": "Sequence", "unity": "Sequence", "limbo": "BTSequence (remembers the running child by default), BTDynamicSequence" },
+    { "concept": "Tick all children", "book": "Parallel, M of N", "btcpp": "Parallel", "ue": "Simple Parallel, plus Services", "unity": "Run In Parallel, Join", "limbo": "BTParallel" },
+    { "concept": "Wrap one child", "book": "Decorator", "btcpp": "DecoratorNode", "ue": "Decorator, which also serves as the condition", "unity": "Modifier", "limbo": "BTDecorator" },
+    { "concept": "Ask a question, never Running", "book": "Condition (a leaf)", "btcpp": "ConditionNode", "ue": "not a leaf: a Decorator on the branch", "unity": "Conditional Guard, Conditional Branch", "limbo": "BTCondition" },
+    { "concept": "Do something", "book": "Action", "btcpp": "ActionNode (Sync, Stateful, Threaded)", "ue": "Task", "unity": "Action", "limbo": "BTAction" },
+    { "concept": "Shared memory", "book": "not part of the formalism", "btcpp": "Blackboard with typed ports", "ue": "Blackboard asset with Keys", "unity": "Blackboard variables", "limbo": "Blackboard" },
+    { "concept": "When the tree is re-read", "book": "every tick, from the root", "btcpp": "every tick, from the root", "ue": "event driven: a branch runs until it finishes or an Observer Abort fires", "unity": "each Update of the agent", "limbo": "usually each frame" },
+    { "concept": "Answers", "book": "Success, Failure, Running", "btcpp": "SUCCESS, FAILURE, RUNNING, IDLE", "ue": "Succeeded, Failed, InProgress, Aborted", "unity": "Running, Succeeded, Failed, Waiting, Interrupted", "limbo": "SUCCESS, FAILURE, RUNNING, FRESH" }
+  ]
+}
