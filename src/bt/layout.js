@@ -8,6 +8,7 @@ const SYM = { Sequence: "->", Fallback: "?", Parallel: "=>" };
 const DSYM = { Inverter: "!", Retry: "retry", Timeout: "timeout", Repeat: "repeat" };
 
 export function labelOf(s) {
+  if (s.kind === "Custom" || (s.kind === "Decorator" && s.dec?.type === "Custom")) return s.name ?? s.leaf;
   if (s.kind === "Parallel") return `=> ${s.m}${s.name ? " " + s.name : ""}`;
   if (SYM[s.kind]) return `${SYM[s.kind]}${s.name ? " " + s.name : ""}`;
   if (s.kind === "Decorator") return s.dec.type === "Inverter" ? "!" : `${DSYM[s.dec.type]} ${s.dec.n}`;

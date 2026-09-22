@@ -21,7 +21,16 @@
  * Run with `npm run check`.
  */
 
-import D from "../src/data/diagrams.js";
+import { readFileSync } from "node:fs";
+import { tinyXml } from "../src/bt/nav2.js";
+
+/* Node has no DOMParser and no ?raw loader: diagrams.js falls back to these
+   globals when it does not find them already set (see nav2.js and the
+   diagrams.js header). Must be set before diagrams.js is imported, so the
+   import below is dynamic rather than static. */
+globalThis.__NAV2 = readFileSync(new URL("../content/nav2.xml", import.meta.url), "utf8");
+globalThis.DOMParser = class { parseFromString(x) { return tinyXml(x); } };
+const { default: D } = await import("../src/data/diagrams.js");
 
 /* ── text metrics ──────────────────────────────────────────────────────────
    From app.css: .chip-t is 13px mono, .chip-t.sm 11.5px, .note 12px. Mono

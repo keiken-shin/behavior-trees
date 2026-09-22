@@ -10,13 +10,17 @@
  */
 
 import { LESSONS, PARTS } from "../src/data/lessons.js";
-import DIAGRAMS from "../src/data/diagrams.js";
 import { VIDEOS } from "../src/data/videos.js";
 import { PLAYS } from "../src/data/plays.js";
 import { buildDeck } from "../src/data/deck.js";
 import { readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { dirname, join } from "node:path/posix";
+
+/* Node has no ?raw loader: diagrams.js falls back to globalThis.__NAV2 when
+   set. Must be set before diagrams.js is imported, so the import is dynamic. */
+globalThis.__NAV2 = readFileSync(new URL("../content/nav2.xml", import.meta.url), "utf8");
+const { default: DIAGRAMS } = await import("../src/data/diagrams.js");
 
 const { sources: SOURCES } = JSON.parse(readFileSync(new URL("../content/sources.json", import.meta.url), "utf8"));
 const DIAL = JSON.parse(readFileSync(new URL("../content/dialects.json", import.meta.url), "utf8"));
