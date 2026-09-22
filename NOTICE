@@ -1,0 +1,54 @@
+Behavior Trees
+Copyright (c) 2026 Anubhav Kumar
+Licensed under the MIT License (see LICENSE).
+
+This project incorporates material from the sources below. The in-app Sources
+page (#credits) carries the same list for readers.
+
+────────────────────────────────────────────────────────────────────────────
+Colledanchise and Ogren, Behavior Trees in Robotics and AI: An Introduction
+(CRC Press 2018; arXiv 1709.00084) - https://arxiv.org/abs/1709.00084
+    Cited, not copied. This is the textbook chapters 1 to 12 teach from: the
+    node definitions, algorithms 1 to 3, the memory node caution, the
+    behavior tree versus finite state machine argument and the design
+    chapter. The interpreter in src/bt/ is asserted against algorithms 1 to
+    3 directly in scripts/check-bt.mjs, so the citation is checked, not just
+    stated.
+
+────────────────────────────────────────────────────────────────────────────
+BehaviorTree.CPP - https://www.behaviortree.dev/ - MIT, Davide Faconti and
+contributors.
+    No code from the library is used anywhere in this course. Its
+    documentation is cited: the Sequence and Fallback comparison tables
+    define the memory and keep modes taught in chapters 3, 4 and 7, and the
+    blackboard chapter follows its ports model.
+
+────────────────────────────────────────────────────────────────────────────
+ROS 2 Nav2 - https://docs.nav2.org/ - Apache License 2.0, Steve Macenski and
+the Nav2 contributors.
+    content/nav2.xml is copied verbatim from the project's repository and
+    drawn, not executed, in chapter 12. The licence text for Apache 2.0 is
+    at https://www.apache.org/licenses/LICENSE-2.0; this file is
+    redistributed unmodified under that licence, with the walkthrough and
+    node reference documentation cited beside it.
+
+────────────────────────────────────────────────────────────────────────────
+Archivo and Archivo Narrow - Omnibus-Type - SIL Open Font License 1.1.
+JetBrains Mono - JetBrains - SIL Open Font License 1.1.
+    Self-hosted via Fontsource; no third-party font service is contacted.
+
+────────────────────────────────────────────────────────────────────────────
+Curated video
+    The video set is empty at this revision - no clip has yet been curated
+    through `npm run videos`. When it is, every clip stays embedded through
+    the standard YouTube player, remains the property of its creator, is
+    served from its own channel, and counts toward that channel's views.
+    Every channel and the specific clips used are credited on the in-app
+    Sources page.
+
+────────────────────────────────────────────────────────────────────────────
+Generated imagery
+    None is used in this course. Every figure is authored by hand in
+    src/data/diagrams.js, because an image model will invent components and
+    mislabel a tree, and a confidently wrong diagram in a teaching product
+    is worse than no diagram.

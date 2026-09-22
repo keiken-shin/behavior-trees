@@ -164,6 +164,11 @@ button { font: inherit; color: inherit; }
 }
 .home__lede p { max-width: 46ch; color: var(--ink-2); margin: 0; }
 
+.home__plate { margin: 24px 0; }
+.home__plate svg { width: 100%; height: auto; }
+.home__plate a { cursor: pointer; }
+.home__plate a:hover rect { stroke-width: 2.5; }
+
 .stage { position: relative; }
 
 /* index table - the parts table, carrying real lessons */
@@ -182,6 +187,9 @@ button { font: inherit; color: inherit; }
 .index .c-st   { width: 92px; text-align: right; font-family: var(--f-mono); font-size: 10px;
                  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
 .index .done .c-st { color: var(--s-ok); }
+
+.dialects td { font-size: 13px; vertical-align: top; }
+.dial__src { font-family: var(--f-mono); font-size: 10px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--ink-3); }
 
 /* ── card catalogue ────────────────────────────────────────────────────── */
 
@@ -656,11 +664,8 @@ button { font: inherit; color: inherit; }
 
 .figure .stroke { fill: none; stroke-width: var(--w-line); stroke-linejoin: round; stroke-linecap: round; }
 .figure .hair { stroke-width: var(--w-rule); fill: none; }
-.figure .force { stroke-width: 2.5; fill: none; }
-.figure .component { stroke-width: var(--w-line); stroke-dasharray: 7 4; fill: none; }
 .figure .dash { stroke-dasharray: 5 4; }
 .figure .axis { opacity: .8; }
-.figure .area { opacity: .12; }
 .figure .dot { stroke: none; }
 
 .figure .k-ok{stroke:var(--s-ok)}     .figure .fill-ok{fill:var(--s-ok)}
@@ -671,14 +676,6 @@ button { font: inherit; color: inherit; }
 .figure .chip-t.k-ok{fill:var(--s-ok)} .figure .chip-t.k-fail{fill:var(--s-fail)}
 .figure .chip-t.k-run{fill:var(--s-run)} .figure .chip-t.k-tick{fill:var(--s-tick)}
 
-/* The airframe recedes so the semantic marks read as the brightest ones on the
-   plate. Not decoration: on the negative plate an ink-only mark and the airframe
-   would otherwise be the same colour exactly. */
-.figure .airframe .stroke { stroke: var(--ink-2); }
-.figure .airframe .hair   { stroke: var(--ink-3); }
-
-.figure .cg-ring { fill: none; stroke: var(--ink); stroke-width: var(--w-line); }
-.figure .cg-fill { fill: var(--ink); }
 .figure .chip { fill: var(--paper); }
 .figure .chip-t { font-family: var(--f-mono); font-size: 13px; font-weight: 500;
                   text-anchor: middle; dominant-baseline: middle; stroke: none; }

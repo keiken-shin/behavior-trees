@@ -1,0 +1,34 @@
+[
+  {
+    "what": "Ogren 2012 AIAA UAV paper",
+    "why": "Full text closed (HTTP 403 at AIAA, no open copy). Abstract only. The UAV example tree is unverified."
+  },
+  {
+    "what": "Marzinotto et al. ICRA 2014 \"unified framework\"",
+    "why": "KTH DiVA timed out on every attempt. Abstract only. That it fixed the four plus two node set is plausible, not verified."
+  },
+  {
+    "what": "Champandard's 2007 GDC Lyon slides",
+    "why": "aigamedev.com is dead, archive copies are registration teasers. His node set is taken from his 2013 Game AI Pro chapter instead."
+  },
+  {
+    "what": "Reddit r/gamedev and r/robotics",
+    "why": "Blocked. Confusions come from Stack Exchange only."
+  },
+  {
+    "what": "ICUAS 2024 drone inspection BT paper",
+    "why": "PDF 403, existence only."
+  },
+  {
+    "what": "Beehave (Godot) plain Sequence restart rule",
+    "why": "The fetched summary was ambiguous. Re-read before quoting."
+  },
+  {
+    "what": "GDC Vault videos",
+    "why": "Listing pages only, no transcripts."
+  },
+  {
+    "what": "Any ESA use of BTs",
+    "why": "None found. Reported as absence, not as proof of absence."
+  }
+]

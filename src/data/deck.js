@@ -52,7 +52,7 @@ export function buildDeck() {
  * back, and the extra precision of a half-life model buys nothing at 32 cards.
  */
 export const INTERVALS = [1, 2, 4, 8, 16];
-const KEY = "fd.deck";
+const KEY = "bt.deck";
 
 export function deckState() {
   try {
