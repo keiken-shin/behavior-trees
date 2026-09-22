@@ -58,3 +58,55 @@ PLAYS["reactive/preempt"] = {
   tree: "? root\n  -> low battery\n    BatteryBelow 30\n    ReturnHome\n    Charge\n  -> deliver {memory}\n    FlyTo A\n    Drop\n    ReturnHome\n    Land",
   goal: { test: (s, h) => h.some((x) => x.battery < 30) && s.charging, done: "The delivery was halted mid flight and the drone is charging at home." },
 };
+const PREEMPT = "? root\n  -> low battery\n    BatteryBelow 30\n    ReturnHome\n    Charge\n  -> deliver {memory}\n    FlyTo A\n    Drop\n    ReturnHome\n    Land";
+PLAYS["memory/modes"] = {
+  world: "drone", scenario: "delivery", hazards: ["battery12", "gust", "calm"], modes: true,
+  brief: "Same tree, three modes on the root. Drop the battery in each. Then try the patrol with a gust.",
+  tree: PREEMPT,
+  variants: [
+    { label: "safety tree, root reactive", tree: PREEMPT },
+    { label: "safety tree, root memory", tree: PREEMPT.replace("? root", "? root {memory}") },
+    { label: "patrol A then B, reactive", tree: "-> patrol\n  FlyTo A\n  FlyTo B\n  Land" },
+    { label: "patrol A then B, memory", tree: "-> patrol {memory}\n  FlyTo A\n  FlyTo B\n  Land" },
+  ],
+  goal: { test: (s) => s.dead, done: "The drone died with the check skipped. That is what memory costs. Now flip it back." },
+};
+PLAYS["decorators/kinds"] = {
+  world: "drone", scenario: "delivery", hazards: ["gust", "calm"],
+  brief: "A retry around Charge, a timeout around the flight. Add a gust and watch the timeout fire.",
+  tree: "? root\n  -> low battery\n    BatteryBelow 30\n    ReturnHome\n    retry 3\n      Charge\n  -> deliver {memory}\n    timeout 200\n      FlyTo A\n    Drop\n    ReturnHome\n    Land",
+  /* n7 is the timeout node in pre-order: root n0, low battery n1..n5, deliver n6, timeout n7, FlyTo n8. */
+  goal: { test: (s, h) => h.some((x) => x.trace.some((n) => n.status === "Failure" && n.id === "n7")), done: "The timeout gave up on the flight. The Sequence failed, and the tree is asked again." },
+};
+PLAYS["parallel/race"] = {
+  world: "drone", scenario: "delivery", hazards: [],
+  brief: "Two children under a Parallel both write the same blackboard key each tick. Read the log.",
+  tree: "=> 2 both\n  SetMode fast\n  SetMode slow",
+  extraLeaves: {
+    SetMode: { kind: "action", doc: "writes its argument to the blackboard key mode",
+      tick: (s, bb, [v], node) => { bb.set("mode", v, node.id); return "Success"; } },
+  },
+  goal: { test: (s, h) => h.length >= 3, done: "Three ticks, six writes, and the last writer wins every time. That is a race." },
+};
+PLAYS["blackboard/goal"] = {
+  world: "drone", scenario: "delivery", hazards: ["goalB"],
+  brief: "One tree types the waypoint in. The other reads the goal from the blackboard. Move the goal.",
+  tree: "-> deliver {memory}\n  FlyTo Goal\n  Drop\n  ReturnHome\n  Land",
+  variants: [
+    { label: "reads the goal", tree: "-> deliver {memory}\n  FlyTo Goal\n  Drop\n  ReturnHome\n  Land" },
+    { label: "typed the waypoint", tree: "-> deliver {memory}\n  FlyTo A\n  Drop\n  ReturnHome\n  Land" },
+  ],
+  goal: { test: (s) => s.delivered && s.goalMoves > 0, done: "Delivered to the moved goal, because the tree read it instead of remembering it." },
+};
+PLAYS["fsm/transitions"] = {
+  world: "drone", scenario: "delivery", hazards: ["battery12"], counter: true,
+  brief: "The chapter 6 tree again, with a counter of how many times control moved between branches.",
+  tree: PREEMPT,
+  goal: { test: (s, h) => s.delivered, done: "Every switch you counted would be a drawn transition in a state machine." },
+};
+PLAYS["design/mission"] = {
+  world: "drone", scenario: "delivery", hazards: ["battery12", "gust", "calm", "nofly", "goalB"], editor: true,
+  brief: "The whole mission, every hazard, and the editor open. Break it, then fix it.",
+  tree: "? root\n  -> low battery\n    BatteryBelow 30\n    ReturnHome\n    retry 3\n      Charge\n  -> no fly\n    InNoFly\n    ExitNoFly\n  -> deliver {memory}\n    FlyTo Goal\n    Drop\n    ReturnHome\n    Land",
+  goal: { test: (s) => s.delivered && s.landed && s.goalMoves > 0, done: "Delivered to a moved goal, and home. The mission survived everything you threw at it." },
+};
