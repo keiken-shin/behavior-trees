@@ -45,7 +45,7 @@ const SCENARIOS = {
 export function init(scenarioId = "delivery") {
   const sc = SCENARIOS[scenarioId] ?? SCENARIOS.delivery;
   return {
-    x: sc.home.x, y: sc.home.y, heading: 0, flying: false, target: null,
+    x: sc.home.x, y: sc.home.y, heading: 0, flying: false, target: null, targetBy: null,
     battery: 100, dead: false, home: { ...sc.home },
     waypoints: Object.fromEntries(Object.entries(sc.waypoints).map(([k, v]) => [k, { ...v }])),
     goal: sc.goal, noFly: [], wind: { x: 0, y: 0 }, landed: true, charging: false,
@@ -85,13 +85,22 @@ const resolve = (s, name) => {
   if (!w) throw new Error(`no waypoint "${name}"`);
   return w;
 };
-const flyTo = (s, p) => {
+/* Every leaf that flies somewhere shares state.target, so a halted leaf must
+   only clear the target it set itself: otherwise the post-tick halt sweep can
+   null out what a leaf ticked earlier in the same pass just wrote (a reactive
+   branch switch: the new leaf sets the target, then the old leaf's halt fires
+   and clobbers it). targetBy records the id of the node that owns the current
+   target; it stays out of the target object itself so target keeps its plain
+   {x,y} shape. */
+const flyTo = (s, p, node) => {
   if (s.dead) return S.FAILURE;
   if (s.landed) { s.landed = false; s.charging = false; mut(s); }
-  if (!s.target || s.target.x !== p.x || s.target.y !== p.y) { s.target = { ...p }; mut(s); }
+  if (!s.target || s.target.x !== p.x || s.target.y !== p.y) { s.target = { ...p }; s.targetBy = node ? node.id : null; mut(s); }
   return dist(s, p) <= ARRIVE ? S.SUCCESS : S.RUNNING;
 };
-const clearTarget = (s) => { if (s.target) { s.target = null; mut(s); } };
+const clearTarget = (s, node) => {
+  if (s.target && (!node || s.targetBy == null || s.targetBy === node.id)) { s.target = null; s.targetBy = null; mut(s); }
+};
 const cond = (doc, f) => ({ kind: "condition", doc, tick: (s, bb, args) => (f(s, args) ? S.SUCCESS : S.FAILURE) });
 
 export const leaves = {
@@ -105,30 +114,30 @@ export const leaves = {
   Landed: cond("on the ground", (s) => s.landed),
 
   FlyTo: { kind: "action", doc: "fly to waypoint NAME (or Goal); Running until there",
-    tick: (s, bb, [n]) => flyTo(s, resolve(s, n)), halt: clearTarget },
+    tick: (s, bb, [n], node) => flyTo(s, resolve(s, n), node), halt: clearTarget },
   ReturnHome: { kind: "action", doc: "fly to the home pad; Running until there",
-    tick: (s) => flyTo(s, s.home), halt: clearTarget },
+    tick: (s, bb, args, node) => flyTo(s, s.home, node), halt: clearTarget },
   Land: { kind: "action", doc: "land where you are; Success at once",
-    tick: (s) => { if (s.dead) return S.FAILURE; if (!s.landed) { s.landed = true; s.target = null; mut(s); } return S.SUCCESS; } },
+    tick: (s) => { if (s.dead) return S.FAILURE; if (!s.landed) { s.landed = true; s.target = null; s.targetBy = null; mut(s); } return S.SUCCESS; } },
   TakeOff: { kind: "action", doc: "leave the ground; Success at once",
     tick: (s) => { if (s.dead) return S.FAILURE; if (s.landed) { s.landed = false; s.charging = false; mut(s); } return S.SUCCESS; } },
   Charge: { kind: "action", doc: "charge on the pad; Failure away from home, Running until full",
     tick: (s) => {
       if (dist(s, s.home) > ARRIVE) return S.FAILURE;
       if (s.battery >= 100) { if (s.charging) { s.charging = false; mut(s); } return S.SUCCESS; }
-      if (!s.landed || !s.charging) { s.landed = true; s.charging = true; s.target = null; mut(s); }
+      if (!s.landed || !s.charging) { s.landed = true; s.charging = true; s.target = null; s.targetBy = null; mut(s); }
       return S.RUNNING;
     },
     halt: (s) => { if (s.charging) { s.charging = false; mut(s); } } },
   Hover: { kind: "action", doc: "hold position; always Running",
     tick: (s) => { if (s.dead) return S.FAILURE; if (s.landed) { s.landed = false; mut(s); } clearTarget(s); return S.RUNNING; } },
   ExitNoFly: { kind: "action", doc: "fly to the nearest edge of the zone you are in; Running until out",
-    tick: (s) => {
+    tick: (s, bb, args, node) => {
       const r = s.noFly.find((z) => inRect(s, z));
       if (!r) { clearTarget(s); return S.SUCCESS; }
       const exits = [{ x: r.x - 6, y: s.y }, { x: r.x + r.w + 6, y: s.y }, { x: s.x, y: r.y - 6 }, { x: s.x, y: r.y + r.h + 6 }];
       const p = exits.reduce((a, b) => (dist(s, a) < dist(s, b) ? a : b));
-      flyTo(s, p);
+      flyTo(s, p, node);
       return S.RUNNING;
     }, halt: clearTarget },
   Drop: { kind: "action", doc: "drop the parcel; Success only at the goal",

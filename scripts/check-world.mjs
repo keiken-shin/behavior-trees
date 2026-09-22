@@ -150,6 +150,11 @@ t("run: a reactive tree returns home when the battery drops mid flight", () => {
   assert.ok(r.history.slice(81).some((h) => h.target && h.target.x === r.state.home.x), "ReturnHome was targeted after the drop");
   assert.equal(r.history.length, 1500);
 });
+t("run: the reactive switch itself is not one tick late; the drop tick already targets home", () => {
+  const r = run({ world: DRONE, scenario: "delivery", tree: TREE, script: [{ at: 80, hazard: "battery12" }], ticks: 1500 });
+  assert.ok(r.history[79].target, "the halted FlyTo must not null the target ReturnHome just set");
+  assert.equal(r.history[79].target.x, r.state.home.x);
+});
 t("run: the same tree with memory on the root keeps delivering and dies", () => {
   const r = run({ world: DRONE, scenario: "delivery", tree: TREE.replace("? root", "? root {memory}"), script: [{ at: 80, hazard: "battery12" }], ticks: 1500 });
   assert.equal(r.state.dead, true);
