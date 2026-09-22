@@ -177,6 +177,8 @@ export function draw(s) {
   const bat = `<rect class="bat" x="150" y="6" width="40" height="5"/>` +
     `<rect class="bat-f${s.battery < 30 ? " low" : ""}" x="150" y="6" width="${(40 * s.battery) / 100}" height="5"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${MAP_W} ${MAP_H}" class="map" role="img" aria-label="Top down map of the drone">` +
+    `<defs><pattern id="hatch-map" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">` +
+    `<line x1="0" y1="0" x2="0" y2="6" class="hatch"/></pattern></defs>` +
     `<rect class="pad" x="${s.home.x - 5}" y="${s.home.y - 5}" width="10" height="10"/>` +
     nf + tr + wp + wind + bat +
     (s.dead ? `<path class="dead" d="M${s.x - 4} ${s.y - 4} L${s.x + 4} ${s.y + 4} M${s.x + 4} ${s.y - 4} L${s.x - 4} ${s.y + 4}"/>`

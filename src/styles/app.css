@@ -694,6 +694,30 @@ button { font: inherit; color: inherit; }
 .figure[data-state="1"] .cap1, .figure[data-state="2"] .cap2,
 .figure[data-state="3"] .cap3, .figure[data-state="4"] .cap4 { opacity: 1; }
 
+/* ── trees: shape is the kind, fill is the answer ─────────────────────── */
+.node rect, .node ellipse, .node polygon { fill: var(--paper); stroke: var(--ink); stroke-width: var(--w-line); }
+.node .node-t { font-family: var(--f-mono); font-size: 12px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
+.node.st-ok rect, .node.st-ok ellipse, .node.st-ok polygon { stroke: var(--s-ok); fill: color-mix(in srgb, var(--s-ok) 22%, var(--paper)); }
+.node.st-fail rect, .node.st-fail ellipse, .node.st-fail polygon { stroke: var(--s-fail); fill: color-mix(in srgb, var(--s-fail) 22%, var(--paper)); }
+.node.st-run rect, .node.st-run ellipse, .node.st-run polygon { stroke: var(--s-run); fill: color-mix(in srgb, var(--s-run) 26%, var(--paper)); }
+.node.dirty ellipse { fill: url(#hatch); }
+.hatch { stroke: var(--s-fail); stroke-width: 1; }
+.edge { stroke: var(--ink-3); stroke-width: var(--w-rule); }
+.pulse { fill: var(--s-tick); }
+.craft path { fill: var(--ink); }
+.craft--landed path { fill: var(--paper); stroke: var(--ink); stroke-width: 1; }
+.map { width: 100%; height: auto; background: var(--paper-sunk); border: var(--w-hair) solid var(--rule); }
+.map .pad { fill: none; stroke: var(--ink); stroke-width: .8; }
+.map .wp { fill: var(--paper); stroke: var(--ink); stroke-width: .8; }
+.map .wp--goal { fill: var(--ink); }
+.map .wp-t { font-family: var(--f-mono); font-size: 6px; fill: var(--ink); }
+.map .nofly { fill: url(#hatch-map); stroke: var(--s-fail); stroke-width: .6; }
+.map .track { fill: none; stroke: var(--ink-3); stroke-width: .5; stroke-dasharray: 1 1; }
+.map .wind path { fill: none; stroke: var(--ink-2); stroke-width: .8; }
+.map .bat { fill: none; stroke: var(--ink); stroke-width: .5; }
+.map .bat-f { fill: var(--s-ok); } .map .bat-f.low { fill: var(--s-fail); }
+.map .dead path { stroke: var(--s-fail); stroke-width: 1.2; }
+
 /* ── responsive ────────────────────────────────────────────────────────── */
 
 @media (max-width: 1020px) {
