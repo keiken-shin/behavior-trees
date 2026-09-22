@@ -73,10 +73,10 @@ PLAYS["memory/modes"] = {
 };
 PLAYS["decorators/kinds"] = {
   world: "drone", scenario: "delivery", hazards: ["gust", "calm"],
-  brief: "A retry around Charge, a timeout around the flight. Add a gust and watch the timeout fire.",
-  tree: "? root\n  -> low battery\n    BatteryBelow 30\n    ReturnHome\n    retry 3\n      Charge\n  -> deliver {memory}\n    timeout 200\n      FlyTo A\n    Drop\n    ReturnHome\n    Land",
-  /* n7 is the timeout node in pre-order: root n0, low battery n1..n5, deliver n6, timeout n7, FlyTo n8. */
-  goal: { test: (s, h) => h.some((x) => x.trace.some((n) => n.status === "Failure" && n.id === "n7")), done: "The timeout gave up on the flight. The Sequence failed, and the tree is asked again." },
+  brief: "A retry around Charge, a timeout around the flight home. Add a gust and watch the timeout fire.",
+  tree: "? root\n  -> low battery\n    BatteryBelow 30\n    ReturnHome\n    retry 3\n      Charge\n  -> deliver {memory}\n    FlyTo A\n    Drop\n    timeout 200\n      ReturnHome\n    Land",
+  /* n9 is the timeout node in pre-order: root n0, low battery n1..n5, deliver n6, FlyTo n7, Drop n8, timeout n9, ReturnHome n10, Land n11. */
+  goal: { test: (s, h) => h.some((x) => x.trace.some((n) => n.status === "Failure" && n.id === "n9")), done: "The timeout gave up on the flight. The Sequence failed, and the tree is asked again." },
 };
 PLAYS["parallel/race"] = {
   world: "drone", scenario: "delivery", hazards: [],
@@ -98,11 +98,25 @@ PLAYS["blackboard/goal"] = {
   ],
   goal: { test: (s) => s.delivered && s.goalMoves > 0, done: "Delivered to the moved goal, because the tree read it instead of remembering it." },
 };
+/* The root's two direct children, in pre-order: n1 (low battery) and n5 (deliver). */
+function switches(h) {
+  const ids = ["n1", "n5"];
+  let prev = null, count = 0;
+  for (const x of h) {
+    let chosen = null;
+    for (const n of x.trace) if (ids.includes(n.id)) chosen = n.id;
+    if (chosen !== null) {
+      if (prev !== null && chosen !== prev) count++;
+      prev = chosen;
+    }
+  }
+  return count;
+}
 PLAYS["fsm/transitions"] = {
   world: "drone", scenario: "delivery", hazards: ["battery12"], counter: true,
   brief: "The chapter 6 tree again, with a counter of how many times control moved between branches.",
   tree: PREEMPT,
-  goal: { test: (s, h) => s.delivered, done: "Every switch you counted would be a drawn transition in a state machine." },
+  goal: { test: (s, h) => switches(h) >= 3, done: "Three switches. Every one would be a drawn transition in a state machine. This tree keeps switching at the 30 percent line: charging lifts the battery above it, the flight drops it back below." },
 };
 PLAYS["design/mission"] = {
   world: "drone", scenario: "delivery", hazards: ["battery12", "gust", "calm", "nofly", "goalB"], editor: true,
