@@ -39,10 +39,11 @@ JetBrains Mono - JetBrains - SIL Open Font License 1.1.
 
 ────────────────────────────────────────────────────────────────────────────
 Curated video
-    The video set is empty at this revision - no clip has yet been curated
-    through `npm run videos`. When it is, every clip stays embedded through
-    the standard YouTube player, remains the property of its creator, is
-    served from its own channel, and counts toward that channel's views.
+    Twenty seven clips across the twelve chapters are curated through
+    `npm run videos` and listed in content/videos.json. Every clip stays
+    embedded through the standard YouTube player, remains the property of
+    its creator, is served from its own channel, and counts toward that
+    channel's views.
     Every channel and the specific clips used are credited on the in-app
     Sources page.
 
