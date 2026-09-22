@@ -1421,7 +1421,7 @@
       "views": 202571,
       "embeddable": true,
       "picked": true,
-      "note": "Includes the historical case for behavior trees over the finite state machines they replaced in game AI.",
+      "note": "Makes the historical case for behavior trees over state machines in game AI; the chapter's own counts show machines never went away.",
       "query": "behavior tree vs state machine"
     },
     {

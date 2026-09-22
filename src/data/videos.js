@@ -196,7 +196,7 @@ export const VIDEOS = {
       "title": "Behaviour Trees: The Cornerstone of Modern Game AI | AI 101",
       "channel": "AI and Games",
       "duration": "9:50",
-      "note": "Includes the historical case for behavior trees over the finite state machines they replaced in game AI."
+      "note": "Makes the historical case for behavior trees over state machines in game AI; the chapter's own counts show machines never went away."
     },
     {
       "id": "CZvfuNfdc1M",
