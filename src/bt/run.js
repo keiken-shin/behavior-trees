@@ -15,7 +15,7 @@ export function start({ world, scenario, tree }) {
    caller can paint it. */
 export function advance(sim, hazard) {
   const { world, state, bt, bb } = sim;
-  if (hazard) hazard.apply(state);
+  for (const h of [].concat(hazard ?? [])) h.apply(state);
   const { status, trace } = tick(bt, state, bb);
   world.step(state);
   sim.t++;
@@ -26,7 +26,8 @@ export function advance(sim, hazard) {
 
 export function run({ world, scenario = "delivery", tree, script = [], ticks = 1000, until }) {
   const sim = start({ world, scenario, tree });
-  const byTick = new Map(script.map((e) => [e.at, world.hazards.find((h) => h.id === e.hazard)]));
+  const byTick = new Map();
+  for (const e of script) byTick.set(e.at, [...(byTick.get(e.at) ?? []), world.hazards.find((h) => h.id === e.hazard)]);
   let passed = false;
   for (let i = 1; i <= ticks; i++) {
     advance(sim, byTick.get(i));

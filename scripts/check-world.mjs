@@ -159,6 +159,10 @@ t("run: the same tree with memory on the root keeps delivering and dies", () => 
   const r = run({ world: DRONE, scenario: "delivery", tree: TREE.replace("? root", "? root {memory}"), script: [{ at: 80, hazard: "battery12" }], ticks: 1500 });
   assert.equal(r.state.dead, true);
 });
+t("run: two scripted hazards at the same tick both apply", () => {
+  const r = run({ world: DRONE, scenario: "delivery", tree: TREE, script: [{ at: 5, hazard: "nofly" }, { at: 5, hazard: "gust" }], ticks: 5 });
+  assert.ok(r.state.noFly.length > 0, "the zone appeared"); assert.equal(r.state.wind.x, 4, "and the gust blew");
+});
 t("run: until() stops early and reports passed", () => {
   const r = run({ world: DRONE, scenario: "delivery", tree: TREE, ticks: 5000, until: (s) => s.delivered });
   assert.equal(r.passed, true); assert.ok(r.ticks < 5000);

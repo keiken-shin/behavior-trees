@@ -56,7 +56,8 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   }
   function oneTick(hazard) {
     if (!sim) return;
-    if (!hazard) hazard = W.hazards.find((h) => h.id === cfg.script?.find((e) => e.at === sim.t + 1)?.hazard);
+    const scripted = (cfg.script ?? []).filter((e) => e.at === sim.t + 1).map((e) => W.hazards.find((h) => h.id === e.hazard));
+    hazard = [hazard, ...scripted].filter(Boolean);
     const { status, trace } = advance(sim, hazard);
     view.paint(trace);
     if (cfg.counter) {
