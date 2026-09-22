@@ -23,7 +23,7 @@ const SOURCES = SOURCE_FILE.sources;
 const cite = (id) => {
   const s = SOURCES[id];
   if (!s) return "";
-  return `<sup class="cite"><a href="#credits" title="${s.title.replace(/"/g, "&quot;")}">${id}</a></sup>`;
+  return `<sup class="cite"><a href="#credits/${id}" title="${s.title.replace(/"/g, "&quot;")}">${id}</a></sup>`;
 };
 
 let teardown = null;

@@ -58,7 +58,14 @@ function header() {
 }
 
 function route({ meta, index }) {
-  const id = location.hash.replace(/^#/, "");
+  const hash = location.hash.replace(/^#/, "");
+  /* A source superscript links to "credits/<id>": the route is everything
+     before the first slash, matched exactly as before, and the id after it
+     names a row to land on once the sources page has rendered. A bare hash
+     has no slash, so id is the whole thing and target is null - unchanged. */
+  const slash = hash.indexOf("/");
+  const id = slash === -1 ? hash : hash.slice(0, slash);
+  const target = slash === -1 ? null : hash.slice(slash + 1);
   const i = LESSONS.findIndex((l) => l.id === id);
   index.hidden = id === "";           // nothing to go back to from the index itself
   /* A new plate starts at its top. The hashes here name routes, not anchors, so
@@ -97,6 +104,11 @@ function route({ meta, index }) {
     meta.textContent = PARTS.length > 1 && part ? `${part.title} · ${n}` : n;
     renderLesson(app, id);
   }
+  /* The row a source superscript names carries that id as its own id (see
+     credits.js), so once the page above has rendered it, this is just
+     finding it. A stale or unknown id finds nothing, and is left where
+     scrollTo already put it rather than throwing. */
+  if (target) document.getElementById(target)?.scrollIntoView();
 }
 
 /* Turning to another plate, rather than the old one being replaced under you.
