@@ -1,0 +1,14 @@
+{ "concepts": [
+  { "id": "the-tick", "videoQueries": ["behavior tree tick explained", "what is a behavior tree game ai"] },
+  { "id": "three-answers", "videoQueries": ["behavior tree success failure running", "behavior tree running state explained"] },
+  { "id": "sequence", "videoQueries": ["behavior tree sequence node", "behavior tree sequence vs selector"] },
+  { "id": "fallback", "videoQueries": ["behavior tree selector fallback node", "behavior tree priority selector"] },
+  { "id": "conditions", "videoQueries": ["behavior tree condition node", "behavior tree conditions decorators unreal"] },
+  { "id": "reactivity", "videoQueries": ["behavior tree reactive preemption", "behavior tree interrupt running action"] },
+  { "id": "memory", "videoQueries": ["behavior tree memory nodes", "why memory nodes is a bad idea behavior tree"] },
+  { "id": "decorators", "videoQueries": ["behavior tree decorator node", "behavior tree inverter retry timeout"] },
+  { "id": "parallel", "videoQueries": ["behavior tree parallel node", "behavior tree parallel node race"] },
+  { "id": "blackboard", "videoQueries": ["behavior tree blackboard", "behaviortree.cpp blackboard ports"] },
+  { "id": "tree-or-machine", "videoQueries": ["behavior tree vs state machine", "behavior trees breaking the cycle of misuse"] },
+  { "id": "design", "videoQueries": ["nav2 behavior tree explained", "behavior tree drone mission"] }
+] }
