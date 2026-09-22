@@ -119,12 +119,12 @@ Modes on Sequence and Fallback, as a `mode` field:
 
 | Mode | Where it comes from | Child returns Running | Child returns Failure (Sequence) or Success (Fallback) |
 |---|---|---|---|
-| `reactive` (default) | the textbook | next tick starts again from the first child | return it, next tick starts again from the first child |
-| `resume` | BehaviorTree.CPP plain Sequence and Fallback | next tick starts from the running child | return it, next tick starts from the first child |
-| `memory` | the textbook's Sequence* and Fallback* | next tick skips children that already answered | return it and clear the memory |
+| `reactive` (default) | the textbook's Sequence and Fallback; BehaviorTree.CPP ReactiveSequence and ReactiveFallback | next tick starts again from the first child | return it, next tick starts again from the first child |
+| `memory` | the textbook's Sequence* and Fallback*; BehaviorTree.CPP plain Sequence and Fallback | next tick starts from the running child, earlier children are not re-ticked | return it and clear the memory, next tick starts from the first child |
+| `keep` | BehaviorTree.CPP SequenceWithMemory (no Fallback counterpart exists there) | as `memory` | return it but keep the memory, next tick re-ticks the child that answered, skipping the ones that already succeeded |
 
-The interpreter does not implement BehaviorTree.CPP's SequenceWithMemory rule of keeping memory across a Failure.
-The dialect appendix says so.
+Verified 2026-09-22 against the library's Sequence and Fallback pages: plain Sequence restarts on FAILURE and ticks the same child again on RUNNING; ReactiveSequence restarts on both; SequenceWithMemory ticks again on both, and its patrol example says a failed GoTo(B) does not cause GoTo(A) to be ticked again.
+The textbook, section 1.3.2, clears a memory node "when the parent node returns either Success or Failure", which is the plain library node, so the two lineages agree on `memory` and the library adds `keep`.
 
 Decorators:
 
@@ -176,7 +176,7 @@ Rules:
 - Two spaces per level of indentation.
 - `->` is a Sequence, `?` is a Fallback, `=> M` is a Parallel with threshold M.
 - A word after the symbol is the node's display name.
-- `{reactive}`, `{resume}` or `{memory}` at the end of a composite line sets its mode.
+- `{reactive}`, `{memory}` or `{keep}` at the end of a composite line sets its mode.
 - `!` is an Inverter. `retry N`, `timeout T`, `repeat N` are the other decorators. A decorator line has exactly one child.
 - Any other first word is a leaf name resolved against the world's leaf library. Following words are its arguments.
 - The parser reports an error with a line number for: unknown leaf, wrong indentation, a decorator with no child or two children, a composite with no child.
@@ -207,9 +207,10 @@ It is not the Cessna, and the file header says so, because the lesson is the min
 
 `leaves`: a map from name to `{ kind: "condition" | "action", args, tick(state, bb, args), halt(state) }`.
 
-Conditions: `BatteryBelow p`, `BatteryAbove p`, `AtWaypoint name`, `AtHome`, `InNoFly`, `GoalChanged`, `WindAbove v`, `Landed`.
+Conditions: `BatteryBelow p`, `BatteryAbove p`, `AtWaypoint name`, `AtHome`, `InNoFly`, `GoalIs name`, `WindAbove v`, `Landed`.
 Actions: `FlyTo name`, `ReturnHome`, `Land`, `TakeOff`, `Charge`, `Hover`, `ExitNoFly`, `Drop`.
 `FlyTo` sets the target and returns Running until arrival, then Success.
+The waypoint name `Goal` resolves to whatever the world's `goal` field names at that tick, so a tree can read the goal instead of typing it.
 `Charge` returns Running until the battery is full, Failure if not at home.
 `halt` on any movement action clears the target.
 
@@ -291,7 +292,7 @@ Each line: title. Myth. Playground. Source of the truth.
 4. Fallback, plan B. Myth: Fallback is an if/else. Play: `? : Charge | ReturnHome`; watch plan A retried every tick. Truth: textbook algorithm 2.
 5. Conditions. Myth: a condition can do things. Play: a deliberately dirty condition that nudges the drone; the trace marks it. Truth: textbook page 9, BehaviorTree.CPP ConditionNode rule.
 6. Reactivity, the whole point. Myth: a running action cannot be interrupted. Play: `? : (-> BatteryBelow 30, ReturnHome) | (-> FlyTo A, Drop)`; drop the battery mid flight; watch the delivery halt and the return take over. Truth: textbook section 2.6.1, preemption in section 1.3.1.
-7. Memory. Myth: memory is free. Play: the chapter 6 tree with the mode toggle; in `memory` the battery drop is ignored and the drone dies. Then the honest counter case: a waypoint reached and then drifted off by wind, where `reactive` loops back and `memory` is right. Truth: textbook section 1.3.2 and 3.6, Klockner 2013, Ogren's lecture "Why Memory Nodes is a bad idea".
+7. Memory. Myth: memory is free. Play: the chapter 6 tree with the mode toggle on the root Fallback; in `memory` the battery check is skipped while the delivery is Running and the drone dies; `keep` shows the library's third variant on a patrol. Then the honest counter case: a waypoint reached and then drifted off by wind, where `reactive` loops back and `memory` is right. Truth: textbook section 1.3.2 and 3.6, Klockner 2013, Ogren's lecture "Why Memory Nodes is a bad idea".
 8. Decorators. Myth: a decorator is just an inverter. Play: `retry 3` on `Charge`, `timeout 50` on `FlyTo A` into a headwind. Truth: textbook page 9, BehaviorTree.CPP decorator list.
 9. Parallel. Myth: parallel means threads. Play: `=> 2 : Hover | Charge`, then two children writing the same blackboard key; the write log shows the race. Truth: textbook algorithm 3, Colledanchise and Natale on concurrency, the 7 percent usage figure.
 10. The blackboard. Myth: it is a bag of globals. Play: the write log as a table; a key nobody reads. Truth: BehaviorTree.CPP ports, py_trees blackboard access rules, Francis pitfall three.
@@ -310,7 +311,7 @@ Each item carries a reference tree that passes and a misconception tree that fai
 1. Deliver to A, then come home and land. Closed to nobody. Warms up the editor.
 2. Battery drops to 20 percent mid flight. The drone must be home before the battery is empty. Closed to anybody who still thinks a tree runs once, or that memory is free.
 3. A gust pushes the drone into a no fly zone. It must be out within thirty ticks. Closed to anybody who thinks a running action cannot be interrupted.
-4. The goal moves mid flight. The drone must reach the new goal. Closed to anybody who thinks Fallback is an if/else evaluated once.
+4. The goal moves mid flight. The drone must reach the new goal. Closed to anybody who typed the waypoint into the tree instead of reading it from the blackboard.
 5. Waypoint A is reached and the wind drifts the drone off it. The drone must go on to B and never return to A. Closed to anybody who now thinks memory is always wrong.
 
 ## 13. Checks
