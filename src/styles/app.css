@@ -856,6 +856,13 @@ button { font: inherit; color: inherit; }
 .pg__err { color: var(--s-fail); font-family: var(--f-mono); font-size: 12px; }
 .tree-live .node.err rect, .tree-live .node.err ellipse { stroke-dasharray: 3 2; }
 .fact { border-left: var(--w-line) solid var(--ink); padding-left: 12px; color: var(--ink-2); }
+/* A claim's source, shown on the claim. Quiet by design: mono, small, secondary
+   ink and a hairline, never one of the status colours, because a citation is a
+   reference and not an answer. */
+.cite { margin-left: 3px; line-height: 0; }
+.cite a { font-family: var(--f-mono); font-size: 10px; letter-spacing: .01em;
+          color: var(--ink-3); text-decoration: none; border-bottom: var(--w-hair) solid var(--rule); }
+.cite a:hover { color: var(--ink); border-bottom-color: var(--ink-3); }
 @media (max-width: 1020px) {
   .pg__panes, .pg__board { grid-template-columns: 1fr; }
 }

@@ -5,6 +5,7 @@ import { el, mark } from "./util.js";
 import { stepsFor, doneSteps, markStep } from "./steps.js";
 import { openPlayer, closePlayer } from "./player.js";
 import { PLAYS } from "../data/plays.js";
+import SOURCE_FILE from "../../content/sources.json";
 import { mountPlayground } from "../play/playground.js";
 
 /* Drawn, like every other mark here. A tick and a cross as stroked paths hold
@@ -13,11 +14,23 @@ import { mountPlayground } from "../play/playground.js";
 const TICK = `<svg viewBox="0 0 15 13" aria-hidden="true"><path d="M1 7 L5.5 11.5 L14 1.5"/></svg>`;
 const CROSS = `<svg viewBox="0 0 15 13" aria-hidden="true"><path d="M2.5 1.5 L12.5 11.5 M12.5 1.5 L2.5 11.5"/></svg>`;
 
+/* Every fact and myth already names the source it rests on, and until now that
+   id only ever gated the build. Shown here as a quiet superscript: the id the
+   sources page lists it under, the source's own title on hover, and a way to
+   the page that carries all of them. Deliberately not a status colour - a
+   citation is not an answer. */
+const SOURCES = SOURCE_FILE.sources;
+const cite = (id) => {
+  const s = SOURCES[id];
+  if (!s) return "";
+  return `<sup class="cite"><a href="#credits" title="${s.title.replace(/"/g, "&quot;")}">${id}</a></sup>`;
+};
+
 let teardown = null;
 
 /* The counterpart to stopCheckride(). Rendering another lesson tears the last
    one down, but leaving for the index or the revision cards never did - so a
-   sandbox opened and then escaped with the browser's Back button stayed live,
+   playground opened and then escaped with the browser's Back button stayed live,
    and once it became a modal it stayed live ON TOP of wherever you went. */
 export function stopLesson() { teardown?.(); teardown = null; }
 
@@ -137,7 +150,7 @@ export function renderLesson(root, id) {
     let node = null;
     switch (b.t) {
       case "p": node = el("p", "", b.text); break;
-      case "fact": node = el("p", "fact", b.text); break;
+      case "fact": node = el("p", "fact", b.text + cite(b.src)); break;
       case "concrete": node = el("p", "concrete", b.text); break;
       case "aside": node = el("p", "aside", b.text); break;
 
@@ -150,7 +163,7 @@ export function renderLesson(root, id) {
           `<div class="myth__b"><p class="myth__claim">` +
           `<svg class="revmark" viewBox="0 0 14 12" aria-hidden="true"><path d="M7 0 L14 12 L0 12 Z"/></svg>` +
           `<span>“${b.claim}”</span></p>` +
-          `<p class="myth__truth">${b.truth}</p></div>`;
+          `<p class="myth__truth">${b.truth}${cite(b.src)}</p></div>`;
         break;
 
       /* On a wide screen a figure in the text is a REFERENCE and the plate lives

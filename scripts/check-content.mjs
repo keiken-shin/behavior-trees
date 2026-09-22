@@ -139,6 +139,17 @@ noPart.length
     : pass("every asset imported by source is tracked, so a clean checkout builds");
 }
 
+/* A source nobody cites is not a failure - several were read, and honestly
+   reported, without ending up under a sentence - but an uncited source should
+   stay in sight rather than quietly accumulate. */
+{
+  const cited = new Set(LESSONS.flatMap((l) => l.flow)
+    .filter((b) => b.t === "myth" || b.t === "fact").map((b) => b.src));
+  for (const c of DIAL.columns) cited.add(c.src);     // the appendix cites its columns
+  const loose = Object.keys(SOURCES).filter((id) => !cited.has(id));
+  console.log(`  note  ${loose.length ? `cited by no block: ${loose.join(", ")}` : "every source is cited by a block"}`);
+}
+
 /* A chapter with no clips is allowed - some subjects have no honest source -
    but it should be a decision rather than an oversight, so it is reported. */
 const silent = LESSONS.filter((l) => !(VIDEOS[l.id] || []).length).map((l) => l.id);

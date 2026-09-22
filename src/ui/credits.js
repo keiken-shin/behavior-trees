@@ -8,6 +8,7 @@ import { COURSE } from "../data/lessons.js";
 
 import { VIDEOS } from "../data/videos.js";
 import UNREACHABLE from "../../content/unreachable.json";
+import SOURCE_FILE from "../../content/sources.json";
 import { el, mark } from "./util.js";
 
 /* Owed for material this course could not have been built without. */
@@ -130,6 +131,30 @@ export function renderCredits(root) {
       `<p class="src__who">${s.who}</p>` +
       `<p class="src__what">${s.what}</p>` +
       (s.url ? `<a class="src__url" href="${s.url}" target="_blank" rel="noopener noreferrer">${s.url}</a>` : "");
+    body.appendChild(c);
+  });
+
+  /* ── every source a chapter cites ──
+     The hand-written list above is about what this project is BUILT out of. This
+     one is the other half of the promise: every claim in a chapter carries a
+     source that was opened, and here is the whole set, in the file's own order,
+     each row under the id its superscript shows. */
+  const SOURCES = SOURCE_FILE.sources;
+  const ids = Object.keys(SOURCES);
+  body.appendChild(el("h2", "t-h2 cards__h2", "Every source the chapters cite"));
+  body.appendChild(el("p", "cards__note",
+    `${ids.length} of them. The small id after a fact or a myth in a chapter is the ` +
+    `id in the right hand column here. Under each title is how far the source can be ` +
+    `trusted, and then exactly what was opened and read.`));
+  ids.forEach((id) => {
+    const s = SOURCES[id];
+    const c = el("div", "src");
+    c.id = id;
+    c.innerHTML =
+      `<div class="src__cap"><span><a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.title}</a></span>` +
+      `<span>${id}</span></div>` +
+      `<p class="src__who">${s.grade}</p>` +
+      `<p class="src__what">${s.read}</p>`;
     body.appendChild(c);
   });
 
