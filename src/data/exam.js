@@ -7,6 +7,13 @@ import { WORLDS } from "./plays.js";
 
 const near = (s, p, r = 3) => Math.hypot(s.x - p.x, s.y - p.y) <= r;
 const home = (s) => near(s, s.home);
+/* Shared by any item whose explain() falls through to "it never even delivered" -
+   items 1, 2 and 4 all have a delivery step, and this is the same sentence
+   every time: where the run's history stopped, and what the root was doing. */
+const neverDelivered = (h) => {
+  const last = h[h.length - 1];
+  return `Never delivered; the tick stopped at ${last.t} with status ${last.status}.`;
+};
 
 export const EXAM = [
   {
@@ -16,8 +23,8 @@ export const EXAM = [
     starter: "-> mission {memory}\n  FlyTo A\n",
     pass: (s) => s.delivered && s.landed && home(s),
     explain: (s, h) => {
+      if (!s.delivered) return neverDelivered(h);
       const last = h[h.length - 1];
-      if (!s.delivered) return `Never delivered; the tick stopped at ${last.t} with status ${last.status}.`;
       if (!s.landed) return `Delivered, but never landed; still ${last.status} at tick ${last.t}.`;
       return "Delivered and landed, but not back at the home pad.";
     },
@@ -30,14 +37,23 @@ export const EXAM = [
     scenario: "delivery", script: [{ at: 80, hazard: "battery12" }], ticks: 1500,
     starter: "? root\n  -> deliver {memory}\n    FlyTo A\n    Drop\n    ReturnHome\n    Land\n",
     pass: (s) => !s.dead && s.landed && home(s),
+    /* dropAt matches the "at" of this item's own script entry above: the tick
+       the battery hazard lands. Naming a mechanism ("memory ate the branch")
+       is a guess about the tree; checking whether the tree ever actually
+       targeted home after the drop is not - it reads straight off history. */
     explain: (s, h) => {
+      const dropAt = 80;
       if (s.dead) {
         const diedAt = h.find((x) => x.battery <= 0)?.t ?? h[h.length - 1].t;
-        return `The battery hit zero at tick ${diedAt} while the delivery went on; the low battery branch was never asked again.`;
+        const turned = h.slice(dropAt).find((x) => x.target && x.target.x === s.home.x && x.target.y === s.home.y);
+        return turned
+          ? `The battery hit zero at tick ${diedAt} even though the tree turned for home at tick ${turned.t}.`
+          : `The battery hit zero at tick ${diedAt}; after the drop at tick ${dropAt} the tree never turned for home.`;
       }
+      if (!s.delivered) return neverDelivered(h);
       const last = h[h.length - 1];
-      if (!s.landed) return `Survived, but never landed; still ${last.status} at tick ${last.t}.`;
-      return "Landed away from the home pad.";
+      if (!s.landed) return `Delivered, but never landed; still ${last.status} at tick ${last.t}.`;
+      return "Delivered and landed, but not at the home pad.";
     },
     reference: "? root\n  -> low battery\n    BatteryBelow 30\n    ReturnHome\n    Land\n  -> deliver {memory}\n    FlyTo A\n    Drop\n    ReturnHome\n    Land",
     wrong: "? root {memory}\n  -> low battery\n    BatteryBelow 30\n    ReturnHome\n    Land\n  -> deliver {memory}\n    FlyTo A\n    Drop\n    ReturnHome\n    Land",
@@ -75,9 +91,21 @@ export const EXAM = [
     scenario: "delivery", script: [{ at: 60, hazard: "goalB" }], ticks: 2000,
     starter: "-> deliver {memory}\n  FlyTo A\n  Drop\n  ReturnHome\n  Land\n",
     pass: (s) => s.delivered && s.goal === "B" && home(s),
-    explain: (s) => {
-      if (!s.delivered) return "You never delivered; the tree flew to a fixed waypoint instead of the goal.";
-      if (s.goal !== "B") return `You delivered, but the goal never moved to B (it is ${s.goal}).`;
+    /* goalMovesAt matches the "at" of this item's own script entry above. Whether
+       the tree kept targeting A is read off history's target field, not guessed
+       from which tree text is being judged - a tree that reads Goal correctly
+       but forgot Drop must not be told it targeted a fixed waypoint. */
+    explain: (s, h) => {
+      const goalMovesAt = 60;
+      const A = s.waypoints.A;
+      const stillA = h.slice(goalMovesAt).find((x) => x.target && x.target.x === A.x && x.target.y === A.y);
+      if (stillA) return `After the goal moved to B at tick ${goalMovesAt}, the tree still targeted A at tick ${stillA.t}.`;
+      if (s.dead) {
+        const diedAt = h.find((x) => x.battery <= 0)?.t ?? h[h.length - 1].t;
+        return `The battery hit zero at tick ${diedAt}.`;
+      }
+      if (!s.delivered) return neverDelivered(h);
+      if (s.goal !== "B") return `Delivered, but the goal never moved to B (it is ${s.goal}).`;
       return "Delivered to the moved goal, but never made it home.";
     },
     reference: "-> deliver {memory}\n  FlyTo Goal\n  Drop\n  ReturnHome\n  Land",
