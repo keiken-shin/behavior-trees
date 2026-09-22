@@ -36,7 +36,9 @@ const { default: D } = await import("../src/data/diagrams.js");
    From app.css: .chip-t is 13px mono, .chip-t.sm 11.5px, .note 12px. Mono
    means the advance is exact rather than estimated, which is the only reason
    measuring text outside a browser is honest here. */
-const FS = (cls) => (cls.has("note") ? 12 : cls.has("node-t") ? 12 : cls.has("sm") ? 11.5 : 13);
+const FS = (cls) => (cls.has("note") ? 12
+  : cls.has("node-t") ? (cls.has("node-t--xs") ? 9 : cls.has("node-t--sm") ? 10 : 12)
+    : cls.has("sm") ? 11.5 : 13);
 const ADV = 0.6, ASC = 1.02, DESC = 0.3;   // JetBrains Mono em metrics
 
 /* ── transforms ───────────────────────────────────────────────────────────
@@ -75,6 +77,12 @@ function parseTransform(s) {
    special case downstream. Curves are sampled rather than bounded by their
    control points: a control box is a superset, and a superset is how a
    correctness check learns to cry wolf. */
+/* svg.js escapes its text, so "-> deliver" reaches here as "-&gt; deliver".
+   Measuring the entity would charge a label for four characters it never draws. */
+const unesc = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+
+const ptList = (s) => s.trim().split(/\s+/).filter(Boolean).map((p) => p.split(",").map(Number));
+
 const ring = (cx, cy, rx, ry, n = 48) => Array.from({ length: n }, (_, i) => {
   const t = (2 * Math.PI * i) / n;
   return [cx + rx * Math.cos(t), cy + ry * Math.sin(t)];
@@ -173,7 +181,7 @@ function marks(svg) {
     const [, open, attrStr = "", selfClose, close, text] = mt;
     const top = stack[stack.length - 1];
     if (text !== undefined) {
-      if (top.tag === "text" && !top.skip) top.text = (top.text || "") + text;
+      if ((top.tag === "text" || top.tag === "tspan") && !top.skip) top.text = (top.text || "") + text;
       continue;
     }
     /* <text> is the one element whose geometry needs its content, so it is
@@ -181,7 +189,7 @@ function marks(svg) {
     if (close) {
       if (stack.length > 1) {
         const done = stack.pop();
-        if (done.tag === "text" && !done.skip) emit(done, out);
+        if ((done.tag === "text" || done.tag === "tspan") && !done.skip) emit(done, out);
       }
       continue;
     }
@@ -204,6 +212,14 @@ function marks(svg) {
   return out;
 }
 
+/* The nearest <g class="node"> above an element: a label is a direct child of
+   the group on one line and a <tspan> one level deeper on two. */
+const nodeOf = (el) => { let p = el.parent; while (p && !p.cls?.has("node")) p = p.parent; return p; };
+const spanX = (points) => {
+  const xs = ptList(points).map((p) => p[0]);
+  return xs.length ? Math.max(...xs) - Math.min(...xs) : 0;
+};
+
 function emit(el, out) {
   const { tag, at, m, cls } = el;
   let pts = null;
@@ -215,8 +231,9 @@ function emit(el, out) {
   } else if (tag === "circle") pts = ring(N("cx"), N("cy"), N("r"), N("r"));
   else if (tag === "ellipse") pts = ring(N("cx"), N("cy"), N("rx"), N("ry"));
   else if (tag === "path") pts = pathPts(at.d || "");
-  else if (tag === "text") {
-    const fs = FS(cls), t = el.text || "";
+  else if (tag === "polygon") pts = ptList(at.points || "");
+  else if (tag === "text" || tag === "tspan") {
+    const fs = FS(cls), t = unesc(el.text || "");
     const w = ADV * fs * t.length;
     const anchor = at["text-anchor"] || "middle";
     const x = N("x") - (anchor === "start" ? 0 : anchor === "end" ? w : w / 2);
@@ -232,6 +249,15 @@ function emit(el, out) {
   /* Hand the words and their box up to the chip group: a chip is a rect and a
      text, and the rule below needs both halves of it at once. */
   if (cls.has("chip-t") && el.parent) { el.parent.label = el.text || ""; el.parent.ink = b; }
+  /* Same idiom for a tree node, which svg.js always writes as
+     <g class="node ..."><shape/><text class="node-t"/></g>. The label rule needs
+     the shape's width, taken from its own attributes rather than its transformed
+     box so a scaled plate is measured in the space the label was written in.
+     Custom draws two rects; the first is the outer one. */
+  const g = nodeOf(el);
+  if (g && (tag === "rect" || tag === "ellipse" || tag === "polygon")) {
+    g.shape ??= { tag, w: tag === "rect" ? N("width") : tag === "ellipse" ? 2 * N("rx") : spanX(at.points || "") };
+  }
   out.push({ ...el, box: b });
 }
 
@@ -249,6 +275,9 @@ function emit(el, out) {
    15's live ones. Only FULL paper counts: the doghouse's 0.9-opacity wash over
    the whole plate hides nothing, and treating it as a mask would switch the
    check off for that figure entirely. */
+/* How much of a shape's width its label may use. */
+const FIT = { rect: (w) => w - 8, ellipse: (w) => 0.82 * w, polygon: (w) => 0.6 * w };
+
 const isChip = (el) => el.tag === "rect" && el.cls.has("chip") && el.parent?.cls.has("chip-g");
 const isNote = (el) => el.tag === "text" && el.cls.has("note");
 const isMask = (el) => el.tag === "rect" && el.cls.has("chip") && !el.parent?.cls.has("chip-g") &&
@@ -285,6 +314,42 @@ function audit(key, svg) {
       bad.push(`<${el.tag}${el.cls.size ? ` class="${[...el.cls].join(" ")}"` : ""}> outside the ${vw}×${vh} viewBox: ` +
         `x ${b.x0.toFixed(0)}..${b.x1.toFixed(0)}, y ${b.y0.toFixed(0)}..${b.y1.toFixed(0)}`);
     }
+  }
+
+  /* Does every label fit the shape it is written in? Nothing else here can see
+     this: the markup is valid, every mark is inside the viewBox, and the text
+     simply runs out past the box's sides in the browser. A rect gets an 8 px
+     inset; an ellipse and a rhombus are narrower than their box at the height
+     the text sits on, so they get a fraction of the width instead. */
+  const seenLabel = new Set();
+  for (const el of drawn) {
+    if (!el.cls.has("node-t")) continue;
+    const t = unesc(el.text || "").trim();
+    if (!t || seenLabel.has(t)) continue;
+    const g = nodeOf(el);
+    if (!g?.shape) continue;
+    const room = FIT[g.shape.tag](g.shape.w);
+    const wide = ADV * FS(el.cls) * t.length;
+    if (wide > room + 0.5) {
+      seenLabel.add(t);
+      bad.push(`label "${t}" is ${wide.toFixed(0)} px wide in a ${g.shape.tag} with ${room.toFixed(0)} px of room`);
+    }
+  }
+
+  /* Nothing may be written on the caption line. The caption is set in a
+     proportional face, so its width is the browser's to know - but its line is
+     not: figure() always writes it at vh - 30 at 15 px. Anything whose own box
+     reaches into that band is printed through the sentence under the plate. */
+  const capY = vh - 30, bandTop = capY - ASC * 15, bandBot = capY + DESC * 15;
+  const seenBand = new Set();
+  for (const el of drawn) {
+    if (!isNote(el) && !el.cls.has("chip-t")) continue;
+    const b = el.box;
+    if (b.y1 <= bandTop || b.y0 >= bandBot) continue;
+    const what = `${isNote(el) ? "note" : "chip"} "${(el.text || "").trim().slice(0, 34)}"`;
+    if (seenBand.has(what)) continue;
+    seenBand.add(what);
+    bad.push(`state ${el.state ?? 1}: ${what} sits on the caption band (y ${b.y0.toFixed(0)}..${b.y1.toFixed(0)}, band starts at ${bandTop.toFixed(0)})`);
   }
 
   /* The rule is "paper never covers words": a chip carries a paper patch and a

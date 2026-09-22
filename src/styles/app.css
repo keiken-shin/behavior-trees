@@ -694,6 +694,11 @@ button { font: inherit; color: inherit; }
 /* ── trees: shape is the kind, fill is the answer ─────────────────────── */
 .node rect, .node ellipse, .node polygon { fill: var(--paper); stroke: var(--ink); stroke-width: var(--w-line); }
 .node .node-t { font-family: var(--f-mono); font-size: 12px; fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
+/* Two smaller sizes for a plate whose row will not hold 12px labels. Ten is the
+   floor on a course plate; nine is only for the Nav2 plate, which is a shape to
+   look at rather than a tree to read. */
+.node .node-t--sm { font-size: 10px; }
+.node .node-t--xs { font-size: 9px; }
 .node.st-ok rect, .node.st-ok ellipse, .node.st-ok polygon { stroke: var(--s-ok); fill: color-mix(in srgb, var(--s-ok) 22%, var(--paper)); }
 .node.st-fail rect, .node.st-fail ellipse, .node.st-fail polygon { stroke: var(--s-fail); fill: color-mix(in srgb, var(--s-fail) 22%, var(--paper)); }
 .node.st-run rect, .node.st-run ellipse, .node.st-run polygon { stroke: var(--s-run); fill: color-mix(in srgb, var(--s-run) 26%, var(--paper)); }

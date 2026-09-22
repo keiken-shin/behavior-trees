@@ -19,7 +19,9 @@ const T = (text) => parse(text, FIG_LEAVES);
 
 D["tick/root-to-leaf"] = () => {
   const spec = T("? root\n  -> low battery\n    BatteryBelow 30\n    ReturnHome\n  -> deliver\n    FlyTo A\n    Drop");
-  const at = { x: 150, y: 40 };
+  /* 132 wide because "BatteryBelow 30" is 108px of 12px mono and an ellipse only
+     offers 0.82 of its box; four leaves then need hGap 6 to stay inside 800. */
+  const at = { x: 119, y: 40, nodeW: 132, hGap: 6 };
   return figure({
     title: "A tick travels from the root to a leaf and an answer comes back",
     desc: "A seven node tree. The tick starts at the root, goes down the first branch, reaches the condition, which answers Failure, so the tick moves to the second branch and reaches FlyTo, which answers Running.",
@@ -42,9 +44,12 @@ D["tick/root-to-leaf"] = () => {
    n0 ? root | n1 -> low battery | n2 BatteryBelow | n3 ReturnHome | n4 Charge
    n5 -> deliver | n6 FlyTo A | n7 Drop | n8 ReturnHome | n9 Land */
 const PREEMPT = "? root\n  -> low battery\n    BatteryBelow 30\n    ReturnHome\n    Charge\n  -> deliver {memory}\n    FlyTo A\n    Drop\n    ReturnHome\n    Land";
-/* Wide enough for "BatteryBelow 30" at 12px mono (15 chars, 108px), and seven
-   leaves still fit an 800 box: 7 x 104 + 6 x 6 = 764. */
-const WIDE = { nodeW: 104, hGap: 6, vGap: 44 };
+/* The chapter 6 tree has seven leaves on one row, and the widest of them,
+   "BatteryBelow 30", sits in an ellipse, which offers 0.82 of its box. At the
+   10px label class that needs a 110 box, and seven of those only fit an 800
+   frame with the gaps and the padding cut to the bone: 2 + 7 x 110 + 6 x 4 + 2
+   = 798. Twelve pixel labels would need 132 a node, which does not fit at all. */
+const WIDE = { nodeW: 110, hGap: 4, vGap: 44, pad: 2, labelClass: "node-t--sm" };
 
 D["answers/three"] = () => {
   const one = T("FlyTo A");
@@ -71,7 +76,10 @@ D["answers/three"] = () => {
 D["sequence/todo"] = () => {
   /* n0 -> deliver | n1 BatteryAbove | n2 TakeOff | n3 FlyTo A | n4 Drop | n5 ReturnHome | n6 Land */
   const s = T("-> deliver\n  BatteryAbove 30\n  TakeOff\n  FlyTo A\n  Drop\n  ReturnHome\n  Land");
-  const at = { x: 40, y: 80, ...WIDE };
+  /* Six leaves cannot all be 132 wide inside 800, so this plate drops to the
+     10px label class and 110, which is what "BatteryAbove 30" needs in an
+     ellipse at that size. */
+  const at = { x: 47, y: 80, nodeW: 110, hGap: 6, vGap: 44, labelClass: "node-t--sm" };
   return figure({
     title: "A Sequence walks its list and stops at the first Running or Failure",
     desc: "A Sequence with six children. First all idle; then the first two answer Success and the third Running, so the Sequence answers Running; then the battery condition answers Failure and the Sequence answers Failure with the rest untouched.",
@@ -115,13 +123,15 @@ D["fallback/plan-b"] = () => {
 D["condition/pure"] = () => {
   /* n0 -> peek | n1 NudgedNorth | n2 FlyTo A */
   const s = T("-> peek\n  NudgedNorth\n  FlyTo A");
-  const at = { x: 280, y: 100 };
+  /* 104, not 96: "NudgedNorth" fills an ellipse of 96 to the last hundredth of
+     a pixel, which is a fit only on paper. */
+  const at = { x: 280, y: 100, nodeW: 104 };
   return figure({
     title: "A condition is an ellipse because it only asks; a dirty one is hatched",
     desc: "A Sequence with a condition and an action. The condition is drawn as an ellipse and the action as a rounded box; in the last state the condition is hatched to show it changed the world while answering.",
     captions: [
       "An ellipse asks. A rounded box does.",
-      "Both answer Success on this tick.",
+      "The ellipse answers Success. The rounded box is still flying, so it answers Running.",
       "The interpreter counted a change to the world during the ellipse. Hatched: this condition did something.",
     ],
     states: [
@@ -133,7 +143,7 @@ D["condition/pure"] = () => {
 };
 
 D["reactive/preempt"] = () => {
-  const s = T(PREEMPT), at = { x: 18, y: 60, ...WIDE };
+  const s = T(PREEMPT), at = { x: 1, y: 60, ...WIDE };
   return figure({
     title: "The safety branch cuts the delivery the tick the battery drops",
     desc: "The chapter 6 tree. Delivery Running on the right; then the battery condition on the left answers Success, ReturnHome runs, and every delivery node goes idle.",
@@ -147,14 +157,14 @@ D["reactive/preempt"] = () => {
       tree(s, at),
       tree(s, { ...at, status: { n2: "fail", n1: "fail", n6: "run", n5: "run", n0: "run" } }),
       tree(s, { ...at, status: { n2: "ok", n3: "run", n1: "run", n0: "run" } }),
-      tree(s, { ...at, status: { n2: "ok", n3: "run", n1: "run", n0: "run" } }) + note(560, 330, "idle: halted, target cleared"),
+      tree(s, { ...at, status: { n2: "ok", n3: "run", n1: "run", n0: "run" } }) + note(560, 286, "idle: halted, target cleared"),
     ],
     vb: "0 0 800 360",
   });
 };
 
 D["memory/modes"] = () => {
-  const s = T(PREEMPT), at = { x: 18, y: 60, ...WIDE };
+  const s = T(PREEMPT), at = { x: 1, y: 60, ...WIDE };
   const battery = { n2: "ok", n3: "run", n1: "run", n0: "run" };
   const skipped = { n6: "run", n5: "run", n0: "run" };
   return figure({
@@ -164,15 +174,17 @@ D["memory/modes"] = () => {
       "Same tree. The mode on the root is what changes below.",
       "Root reactive: the left branch is asked first, every tick. The check catches the drop.",
       "Root memory: the root's finger is on the delivery. The check is not asked. The drone flies on.",
-      "Root keep: the same on this tick. It differs only after a Failure, when it will not restart.",
+      "Root keep: the same on this tick. It differs at the answer that ends the walk: a Failure on a Sequence, a Success on a Fallback.",
     ],
     states: [
       tree(s, at),
-      tree(s, { ...at, status: battery }) + note(400, 300, "root {reactive}"),
-      tree(s, { ...at, status: skipped }) + note(400, 320, "root {memory}: the check on the left is never asked"),
-      note(400, 340, "root {keep}: identical on this tick"),
+      tree(s, { ...at, status: battery }) + note(400, 286, "root {reactive}"),
+      tree(s, { ...at, status: skipped }) + note(400, 306, "root {memory}: the check on the left is never asked"),
+      note(400, 326, "root {keep}: identical on this tick"),
     ],
-    vb: "0 0 800 360",
+    /* 400 rather than 360: three stacked notes need the room, and no note may
+       come within 24px of the caption band. */
+    vb: "0 0 800 400",
   });
 };
 
@@ -182,7 +194,9 @@ D["decorators/kinds"] = () => {
      Retargeted from the brief: the play now wraps timeout 200 around the return
      leg, not the outbound flight, so the timeout's child is ReturnHome (n10). */
   const s = T("? root\n  -> low battery\n    BatteryBelow 30\n    ReturnHome\n    retry 3\n      Charge\n  -> deliver {memory}\n    FlyTo A\n    Drop\n    timeout 200\n      ReturnHome\n    Land");
-  const at = { x: 40, y: 40, nodeW: 88, hGap: 10, vGap: 40 };
+  /* The same seven leaf row as the chapter 6 plate, plus a rhombus: "timeout 200"
+     in a rhombus may use 0.6 of the box, which at 10px is another 110. */
+  const at = { x: 1, y: 40, ...WIDE, vGap: 40 };
   return figure({
     title: "Decorators sit between a parent and one child and rule on its answer",
     desc: "The chapter 6 tree with a retry rhombus above Charge and a timeout rhombus above ReturnHome. In the last state the timeout answers Failure while its child was Running.",
@@ -194,28 +208,31 @@ D["decorators/kinds"] = () => {
     states: [
       tree(s, at),
       tree(s, { ...at, status: { n5: "fail", n4: "run" } }),
-      tree(s, { ...at, status: { n10: "run", n9: "fail", n6: "fail" } }) + note(400, 460, "the child was Running; the rhombus turned that into Failure"),
+      tree(s, { ...at, status: { n10: "run", n9: "fail", n6: "fail" } }) + note(400, 400, "the child was Running; the rhombus turned that into Failure"),
     ],
     vb: "0 0 800 480",
   });
 };
 
 D["parallel/m-of-n"] = () => {
-  /* n0 => 2 both | n1 A | n2 B | n3 C */
+  /* n0 => 2 both | n1 Hover | n2 Charge | n3 Land */
   const s = T("=> 2 both\n  Hover\n  Charge\n  Land");
   const at = { x: 220, y: 100 };
   return figure({
     title: "A Parallel ticks every child and answers by count",
-    desc: "A Parallel with threshold 2 over three actions. Every child is ticked every tick; with two Successes the Parallel answers Success even though the third is Running.",
+    desc: "A Parallel with threshold 2 over three actions. Every child is ticked every tick. Land is Success at once and Hover is Running for ever, so the Parallel waits on Charge and answers Success the tick Charge finishes.",
     captions: [
       "Three children, threshold two.",
-      "Every child is ticked. One Success, two Running: not there yet.",
-      "Two Successes reach the threshold. The Parallel answers Success. The third child is halted.",
+      "Every child is ticked. Land is done at once; Hover never finishes, and Charge is still filling. One Success against a threshold of two: not there yet.",
+      "Charge finishes. Two Successes reach the threshold, so the Parallel answers Success. Hover is halted.",
     ],
+    /* Run on a drone sitting at home with a flat battery, these are the only two
+       answers this tree ever has: Hover Running for ever, Land Success at once,
+       and Charge turning from Running to Success the tick the battery fills. */
     states: [
       tree(s, at),
-      tree(s, { ...at, status: { n1: "ok", n2: "run", n3: "run", n0: "run" } }),
-      tree(s, { ...at, status: { n1: "ok", n2: "ok", n3: "run", n0: "ok" } }) + note(400, 300, "M = 2 of N = 3"),
+      tree(s, { ...at, status: { n1: "run", n2: "run", n3: "ok", n0: "run" } }),
+      tree(s, { ...at, status: { n1: "run", n2: "ok", n3: "ok", n0: "ok" } }) + note(400, 300, "M = 2 of N = 3"),
     ],
   });
 };
@@ -281,7 +298,9 @@ D["fsm/transitions"] = () => {
 D["design/backchain"] = () => {
   /* n0 ? delivered | n1 AtWaypoint Goal | n2 -> | n3 ? there | n4 AtWaypoint Goal | n5 FlyTo Goal | n6 Drop */
   const goal = T("? parcel at goal\n  Delivered\n  -> \n    ? at the goal\n      AtWaypoint Goal\n      FlyTo Goal\n    Drop");
-  const at = { x: 160, y: 60 };
+  /* 136: "AtWaypoint Goal" in an ellipse, and "? parcel at goal" in a rect. Four
+     leaf slots at that width still leave a wide margin inside 800. */
+  const at = { x: 96, y: 60, nodeW: 136 };
   return figure({
     title: "Backward chaining: start from done and add a branch for each thing that could be false",
     desc: "A tree grown from the goal. The root Fallback checks the parcel is delivered; if not, a Sequence gets to the goal, using a Fallback that checks the drone is already there before flying, then drops.",
@@ -302,12 +321,17 @@ D["design/backchain"] = () => {
 
 D["nav2/tree"] = () => {
   const spec = nav2ToSpec(NAV2);
-  const small = { nodeW: 74, nodeH: 22, hGap: 4, vGap: 26 };
+  /* Not squeezed into 800 any more. The squeeze was what made this plate
+     unreadable: 74px boxes holding labels up to 204px. Here every node is wide
+     enough for its own name, on two lines where one will not do, and the frame
+     is as wide as the tree really is. An SVG scales to whatever column it is
+     given, so the old fit scale only ever bought a smaller drawing of the same
+     collision. */
+  const small = { nodeW: 120, nodeH: 22, hGap: 4, vGap: 34, labelClass: "node-t--xs", twoLine: true };
   const L = layout(spec, small);
-  /* 740, not 780: node width alone (used for L.w) is not the true extent -
-     a few Nav2 tags (ProgressCheckerSelector) render wider than their box,
-     and at 780 the widest one's label bled ~6px past the left edge. */
-  const scale = Math.min(1, 740 / L.w);
+  /* 20 of margin each side, and enough below the deepest row for the note to
+     clear both the last row of boxes and the caption band. */
+  const W = Math.round(L.w) + 40, H = Math.round(L.h) + 110;
   return figure({
     title: "The default Nav2 navigation tree, drawn from its own XML file",
     desc: "The ROS 2 Nav2 navigate to pose tree with replanning and recovery, every node drawn from the project's XML. Its custom control nodes are double ruled boxes because this course does not run them.",
@@ -316,10 +340,10 @@ D["nav2/tree"] = () => {
       "Double ruled boxes are Nav2's own control nodes: RecoveryNode, PipelineSequence, RoundRobin. Their rules are in the Nav2 documentation, not in this course's interpreter.",
     ],
     states: [
-      `<g transform="translate(${(800 - L.w * scale) / 2} 20) scale(${scale.toFixed(3)})">${tree(spec, { x: 0, y: 0, ...small })}</g>`,
-      note(400, 480, "drawn, not executed"),
+      tree(spec, { x: 20, y: 20, ...small }),
+      note(W / 2, H - 80, "drawn, not executed"),
     ],
-    vb: "0 0 800 500",
+    vb: `0 0 ${W} ${H}`,
   });
 };
 

@@ -65,7 +65,35 @@ function note(cx, cy, text, { anchor = "middle" } = {}) {
    with an arrow, Fallback a box with a question mark, Parallel a box with a
    double arrow, Decorator a rhombus, Action a rounded box, Condition an
    ellipse. Custom is for a real world node we draw but do not run (Nav2). */
-function node(kind, cx, cy, label, { status = "idle", w = 96, h = 34, dirty = false, href = null } = {}) {
+/* Label sizes: 12 px on a course plate, and the two smaller classes a dense
+   plate may ask for. Mirrored by scripts/check-figures.mjs, which measures what
+   this writes. */
+const LABEL_FS = { "node-t--sm": 10, "node-t--xs": 9 };
+const ADV = 0.6;                       // JetBrains Mono is monospaced
+/* How much of a shape's width its label may use: a rect gets an 8 px inset, and
+   an ellipse and a rhombus are narrower than their box where the text sits. */
+const room = (kind, w) => (kind === "Condition" ? 0.82 * w : kind === "Decorator" ? 0.6 * w : w - 8);
+
+/* Where to break a label that will not fit on one line: the last CamelCase
+   boundary or space at or before the midpoint. Where that still leaves a line
+   too wide - WouldAControllerRecoveryHelp breaks after "Would" - the break that
+   makes the longer half shortest is used instead, because a two-line label that
+   still overflows has bought nothing. */
+function twoLines(label, max) {
+  const cuts = [];
+  for (let i = 1; i < label.length; i++) {
+    if (label[i] === " ") cuts.push([i, 1]);
+    else if (/[A-Z]/.test(label[i]) && /[a-z0-9]/.test(label[i - 1])) cuts.push([i, 0]);
+  }
+  if (!cuts.length) return null;
+  const longest = ([i, k]) => Math.max(i, label.length - i - k);
+  const before = cuts.filter(([i]) => i <= label.length / 2);
+  let cut = before.length ? before[before.length - 1] : cuts[0];
+  if (longest(cut) > max) for (const c of cuts) if (longest(c) < longest(cut)) cut = c;
+  return [label.slice(0, cut[0]), label.slice(cut[0] + cut[1])];
+}
+
+function node(kind, cx, cy, label, { status = "idle", w = 96, h = 34, dirty = false, href = null, labelClass = "", twoLine = false } = {}) {
   const x = cx - w / 2, y = cy - h / 2;
   let shape;
   if (kind === "Condition") shape = `<ellipse cx="${n(cx)}" cy="${n(cy)}" rx="${n(w / 2)}" ry="${n(h / 2)}"/>`;
@@ -73,8 +101,18 @@ function node(kind, cx, cy, label, { status = "idle", w = 96, h = 34, dirty = fa
   else if (kind === "Action") shape = `<rect x="${n(x)}" y="${n(y)}" width="${w}" height="${h}" rx="8"/>`;
   else if (kind === "Custom") shape = `<rect x="${n(x)}" y="${n(y)}" width="${w}" height="${h}"/><rect x="${n(x + 3)}" y="${n(y + 3)}" width="${w - 6}" height="${h - 6}"/>`;
   else shape = `<rect x="${n(x)}" y="${n(y)}" width="${w}" height="${h}"/>`;
-  const body = `<g class="node node--${kind.toLowerCase()} st-${status}${dirty ? " dirty" : ""}">${shape}` +
-    `<text class="node-t" x="${n(cx)}" y="${n(cy)}">${esc(label)}</text></g>`;
+  const fs = LABEL_FS[labelClass] ?? 12;
+  const tc = `node-t${labelClass ? ` ${labelClass}` : ""}`;
+  const max = room(kind, w) / (ADV * fs);
+  /* Two tspans, each with its own absolute x and y rather than a dy: the same
+     numbers a browser lays out are then the numbers the figure check reads. */
+  const parts = twoLine && label.length > max ? twoLines(label, max) : null;
+  const words = parts
+    ? `<text class="${tc}" x="${n(cx)}" y="${n(cy)}">` +
+      `<tspan class="${tc}" x="${n(cx)}" y="${n(cy - fs * 0.6)}">${esc(parts[0])}</tspan>` +
+      `<tspan class="${tc}" x="${n(cx)}" y="${n(cy + fs * 0.6)}">${esc(parts[1])}</tspan></text>`
+    : `<text class="${tc}" x="${n(cx)}" y="${n(cy)}">${esc(label)}</text>`;
+  const body = `<g class="node node--${kind.toLowerCase()} st-${status}${dirty ? " dirty" : ""}">${shape}${words}</g>`;
   return href ? `<a href="${esc(href)}">${body}</a>` : body;
 }
 
@@ -95,11 +133,11 @@ function craft(cx, cy, heading, { landed = false } = {}) {
 /* A whole tree from a spec, laid out by layout.js. `status` maps node id to
    ok | fail | run; `pulse` maps an edge "from>to" to 0..1; `hrefs` maps id to
    a link (the index plate). */
-function tree(spec, { x = 0, y = 0, status = {}, dirty = {}, pulse = {}, hrefs = {}, ...opts } = {}) {
+function tree(spec, { x = 0, y = 0, status = {}, dirty = {}, pulse = {}, hrefs = {}, labelClass = "", twoLine = false, ...opts } = {}) {
   const L = layout(spec, opts);
   const edges = L.edges.map((e) => edge(x + e.x1, y + e.y1, x + e.x2, y + e.y2, { pulse: pulse[`${e.from}>${e.to}`] ?? null })).join("");
   const nodes = L.nodes.map((d) => node(d.kind, x + d.x, y + d.y, d.label,
-    { status: status[d.id] ?? "idle", w: d.w, h: d.h, dirty: !!dirty[d.id], href: hrefs[d.id] ?? null })).join("");
+    { status: status[d.id] ?? "idle", w: d.w, h: d.h, dirty: !!dirty[d.id], href: hrefs[d.id] ?? null, labelClass, twoLine })).join("");
   return `<g class="tree">${edges}${nodes}</g>`;
 }
 
