@@ -242,6 +242,10 @@ function emit(el, out) {
       : [-ASC * fs, DESC * fs];
     const y = N("y");
     pts = [[x, y + top], [x + w, y + top], [x + w, y + bot], [x, y + bot]];
+    /* Hand the label text up to the node group too, purely so a node-on-node
+       overlap below can name what it is reporting. Two tspans (a two-line
+       label) each append in turn. */
+    if (cls.has("node-t")) { const g2 = nodeOf(el); if (g2) g2.label = (g2.label || "") + t; }
   }
   if (!pts || !pts.length) return;
   const b = box(pts.map((p) => apply(m, p)));
@@ -282,6 +286,12 @@ const isNote = (el) => el.tag === "text" && el.cls.has("note");
 const isMask = (el) => el.tag === "rect" && el.cls.has("chip") && !el.parent?.cls.has("chip-g") &&
   el.at.opacity === undefined;
 const inside = (a, b) => a.x0 >= b.x0 && a.x1 <= b.x1 && a.y0 >= b.y0 && a.y1 <= b.y1;
+/* A later state redrawing a node at the EXACT box an earlier state drew it at
+   is just that node's status colour changing, which every progressive-build
+   plate in this course does every state - not a print-through. Only a box
+   that has moved or changed shape counts as one shape landing on another. */
+const sameBox = (a, b) => Math.abs(a.x0 - b.x0) < 0.5 && Math.abs(a.x1 - b.x1) < 0.5 &&
+  Math.abs(a.y0 - b.y0) < 0.5 && Math.abs(a.y1 - b.y1) < 0.5;
 
 const over = (a, b) => {
   const w = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
@@ -390,6 +400,40 @@ function audit(key, svg) {
         seen.add(id);
         bad.push(`state ${s}: ${p.what} covers ${q.what} by ${o.w.toFixed(0)}×${o.h.toFixed(0)} px`);
       }
+    }
+  }
+
+  /* A tree node's rect, ellipse or polygon is opaque paper exactly like a
+     chip is. A cumulative state can redraw a whole tree in a different shape
+     from the same origin as an earlier state - design/backchain used to -
+     which lands a later state's node shapes on an earlier state's. Neither
+     shape is a chip or a note, so nothing above catches it. Same masking
+     idiom: a mask drawn in a state after the earlier shape and at or before
+     the later one clears it. Two shapes belonging to the same node (Custom's
+     double ruled box) sit concentric on purpose, two shapes added in the very
+     same state are ordinary siblings the layout already spaced apart, and a
+     later state redrawing the very same node at the very same box is a status
+     colour update, not an overlap - none of the three is compared. */
+  const nodeShapes = drawn
+    .filter((el) => (el.tag === "rect" || el.tag === "ellipse" || el.tag === "polygon") && el.parent?.cls.has("node"))
+    .map((el) => ({
+      state: el.state || 1, box: el.box, node: el.parent,
+      what: `${el.tag}${el.parent.label ? ` "${el.parent.label.trim()}"` : ""}`,
+    }));
+  const seenNodes = new Set();
+  for (let s = 1; s <= states; s++) {
+    const live = nodeShapes.filter((nd) => nd.state <= s && !masks.some(
+      (m) => (m.state || 1) >= nd.state && (m.state || 1) <= s && inside(nd.box, m.box)));
+    for (let i = 0; i < live.length; i++) for (let j = i + 1; j < live.length; j++) {
+      const [a, b] = [live[i], live[j]];
+      if (a.node === b.node || a.state === b.state || sameBox(a.box, b.box)) continue;
+      const o = over(a.box, b.box);
+      if (!o || o.w < 1 || o.h < 1) continue;
+      const [older, newer] = a.state < b.state ? [a, b] : [b, a];
+      const id = `${older.what}@${older.state}|${newer.what}@${newer.state}`;
+      if (seenNodes.has(id)) continue;
+      seenNodes.add(id);
+      bad.push(`state ${s}: ${newer.what} (state ${newer.state}) overlaps ${older.what} (state ${older.state}) by ${o.w.toFixed(0)}×${o.h.toFixed(0)} px`);
     }
   }
   return bad;

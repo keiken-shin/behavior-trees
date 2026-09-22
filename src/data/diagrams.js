@@ -297,10 +297,22 @@ D["fsm/transitions"] = () => {
 
 D["design/backchain"] = () => {
   /* n0 ? delivered | n1 AtWaypoint Goal | n2 -> | n3 ? there | n4 AtWaypoint Goal | n5 FlyTo Goal | n6 Drop */
+  const s1 = T("? parcel at goal\n  Delivered");
+  const s2 = T("? parcel at goal\n  Delivered\n  -> \n    AtWaypoint Goal\n    Drop");
   const goal = T("? parcel at goal\n  Delivered\n  -> \n    ? at the goal\n      AtWaypoint Goal\n      FlyTo Goal\n    Drop");
   /* 136: "AtWaypoint Goal" in an ellipse, and "? parcel at goal" in a rect. Four
      leaf slots at that width still leave a wide margin inside 800. */
   const at = { x: 96, y: 60, nodeW: 136 };
+  /* Every state redraws a differently shaped tree from the same origin, and a
+     cumulative state never hides an earlier one (only .s2/.s3/.s4 fade IN), so
+     without help state 4 would show all three trees stacked - "? parcel at
+     goal" three times over, "AtWaypoint Goal" sitting on "? at the goal". A
+     bare paper rect (no chip-g wrapper: the check's own mask idiom, see
+     blackboard/ports) covers exactly the box the previous tree's nodes occupy
+     before the next, larger tree is drawn over it. State 4 adds no tree of its
+     own, so it needs no mask - it keeps state 3's and only adds the note. */
+  const maskS1 = `<rect class="chip" x="96" y="60" width="152" height="130"/>`;
+  const maskS2 = `<rect class="chip" x="96" y="60" width="456" height="210"/>`;
   return figure({
     title: "Backward chaining: start from done and add a branch for each thing that could be false",
     desc: "A tree grown from the goal. The root Fallback checks the parcel is delivered; if not, a Sequence gets to the goal, using a Fallback that checks the drone is already there before flying, then drops.",
@@ -311,10 +323,13 @@ D["design/backchain"] = () => {
       "Every action has its success condition to its left. An action already satisfied is never run.",
     ],
     states: [
-      tree(T("? parcel at goal\n  Delivered"), at),
-      tree(T("? parcel at goal\n  Delivered\n  -> \n    AtWaypoint Goal\n    Drop"), at),
-      tree(goal, at),
-      tree(goal, at) + note(400, 330, "implicit sequence: condition left, action right"),
+      tree(s1, at),
+      maskS1 + tree(s2, at),
+      maskS2 + tree(goal, at),
+      /* Below the goal tree's deepest row (bottom edge at y 342), not in the
+         46px gap above it - that gap sits inside the row's own label band and
+         the note printed straight through "AtWaypoint Goal" and "FlyTo Goal". */
+      note(400, 390, "implicit sequence: condition left, action right"),
     ],
   });
 };
@@ -344,6 +359,10 @@ D["nav2/tree"] = () => {
       note(W / 2, H - 80, "drawn, not executed"),
     ],
     vb: `0 0 ${W} ${H}`,
+    /* 2904px wide scaled into a 693px column puts a 9px label on screen at
+       about 2px. This plate is the one that actually needs its real size, so
+       it is the only one that scrolls sideways instead of shrinking. */
+    wide: true,
   });
 };
 

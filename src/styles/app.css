@@ -576,6 +576,12 @@ button { font: inherit; color: inherit; }
 .bench { border: var(--w-rule) solid var(--ink); }
 .bench .fig-host { position: relative; }
 .fig-host svg.figure { display: block; width: 100%; height: auto; }
+/* nav2/tree is the one plate wide enough (2904px) that shrinking it to the
+   column width put its 9px labels on screen at about 2px. It carries its own
+   width attribute instead of the usual 100%, and the host scrolls sideways to
+   it rather than the page ever growing wider than the viewport. */
+.fig-host:has(svg.figure--wide) { overflow-x: auto; }
+.fig-host svg.figure--wide { width: auto; max-width: none; height: auto; }
 
 .sheets {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 9px 12px;
@@ -750,6 +756,8 @@ button { font: inherit; color: inherit; }
     background: var(--paper); border: var(--w-rule) solid var(--ink);
   }
   .figref__plate .fig-host svg.figure { display: block; width: 100%; height: auto; }
+  .figref__plate .fig-host:has(svg.figure--wide) { overflow-x: auto; }
+  .figref__plate .fig-host svg.figure--wide { width: auto; max-width: none; height: auto; }
   .figref__plate .sheets { border-top: var(--w-hair) solid var(--rule); }
   .apply { padding-bottom: 30px; }
   /* One column here, so there is no column-1 edge left to align to. */
