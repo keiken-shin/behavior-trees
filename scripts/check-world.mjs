@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { S } from "../src/bt/tree.js";
 import { DRONE, DT, SPEED, ARRIVE, DRAIN } from "../src/world/drone.js";
-import { run } from "../src/bt/run.js";
+import { run, walkOrder } from "../src/bt/run.js";
 
 let failed = 0, passed = 0;
 const t = (name, fn) => {
@@ -171,6 +171,11 @@ t("run: two scripted hazards at the same tick both apply", () => {
 t("run: until() stops early and reports passed", () => {
   const r = run({ world: DRONE, scenario: "delivery", tree: TREE, ticks: 5000, until: (s) => s.delivered });
   assert.equal(r.passed, true); assert.ok(r.ticks < 5000);
+});
+
+t("walkOrder: the tick walks in pre-order, so visited ids sort by number", () => {
+  const trace = [{ id: "n2" }, { id: "n1" }, { id: "n5" }, { id: "n4" }, { id: "n0" }];   // post-order, as tick() records
+  assert.deepEqual(walkOrder(trace), ["n0", "n1", "n2", "n4", "n5"]);
 });
 
 console.log(failed ? `\n${failed} world check(s) FAILED` : `\nworld: ${passed} checks pass`);

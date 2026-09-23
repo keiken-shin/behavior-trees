@@ -44,6 +44,12 @@ export function switchCount(ticks, rootChildIds) {
   return count;
 }
 
+/* The order the tick walked the nodes it visited. tick() records post-order,
+   but ids are pre-order and a tick is a depth first walk over the visited
+   subtree, so the numeric order of the visited ids is the walk order. */
+export const walkOrder = (trace) =>
+  trace.map((e) => e.id).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)));
+
 export function run({ world, scenario = "delivery", tree, script = [], ticks = 1000, until }) {
   const sim = start({ world, scenario, tree });
   const byTick = new Map();
