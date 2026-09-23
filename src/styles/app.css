@@ -905,3 +905,17 @@ button { font: inherit; color: inherit; }
   .pg__panes, .pg__board { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .pg__tree svg * { transition: none; } }
+
+/* ── a scene's story ────────────────────────────────────────────────────── */
+.pg--story .pg__bar, .pg--story .pg__switches, .pg--story .pg__hazards, .pg--story .pg__edit, .pg--story .pg__goal { display: none; }
+.pg__story { margin-top: 12px; }
+.pg__steps { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pg__stepbtn[data-at="done"] { background: var(--ink); color: var(--paper); }
+.pg__stepbtn[data-at="now"] { border-width: 2px; }
+.pg__next { margin-left: 6px; }
+.pg__skip { border-style: dashed; }
+.pg__say { margin: 10px 0 0; font-size: 15px; line-height: 1.5; min-height: 1.5em; }
+.pg__scrub { display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
+.pg__scrub input { flex: 1; accent-color: var(--accent); }
+.pg__scrub input:disabled { opacity: .4; }

@@ -1,29 +1,39 @@
-/* Two panes: the tree, repainted every tick, and the world beside it. The
-   reader steps ticks, plays them at a chosen rate, flips variants and modes,
-   injects hazards, and (in the checkride and chapter 12) edits the tree as
-   text. Nothing here knows it is a drone: `cfg.world` names a WORLDS entry
-   and everything the playground needs comes off that object. */
+/* Two panes: the graph, repainted every tick, and the world beside it. With
+   `cfg.steps` the playground first tells a story: each step runs the sim to
+   its moment at 20 ticks a second (or at once, with skip), stops, and shows
+   its caption. After the last step the controls unlock: Step, Play, rate,
+   Reset, hazards, variants, modes, the editor, the goal. Without steps it is
+   unlocked from the start, which is what the checkride uses.
+
+   Nothing here knows it is a drone: `cfg.world` names a WORLDS entry and
+   everything comes off that object. Nothing here decides a step's stop either:
+   stepDone() is shared with the check that proved every step happens. */
 import { start, advance, switchCount } from "../bt/run.js";
 import { parse, format, ParseError } from "../bt/parse.js";
 import { WORLDS } from "../world/index.js";
-import { treeView } from "./tree-view.js";
+import { stepDone, fill } from "../data/scenes.js";
+import { graphView } from "./graph-view.js";
 import { el } from "../ui/util.js";
 
 const RATES = [1, 2, 5, 10, 30, 60];   // ticks per second on the slider
+const STORY_RATE = 20;
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
 
 export function mountPlayground(host, cfg, { onDone } = {}) {
   const world = WORLDS[cfg.world];
   const leaves = { ...world.leaves, ...(cfg.extraLeaves ?? {}) };
   const W = { ...world, leaves };
-  /* lastStatus is the interpreter's last answer. A hazard press repaints the
-     world without ticking, and painting "Idle" there would put a status on the
-     screen that the interpreter never returned. */
+  const steps = cfg.steps ?? [];
   let text = cfg.tree, sim = null, timer = null, rate = 10, done = false, lastStatus = null;
+  let at = 0;                       // steps completed so far
+  let story = steps.length > 0;     // locked until the last step has run
 
   host.innerHTML =
-    `<div class="pg">` +
-      `<p class="pg__brief">${cfg.brief}</p>` +
+    `<div class="pg${story ? " pg--story" : ""}">` +
+      (cfg.brief ? `<p class="pg__brief">${cfg.brief}</p>` : "") +
       `<div class="pg__panes"><div class="pg__tree"></div><div class="pg__world"></div></div>` +
+      `<label class="pg__scrub">trace at tick <b>0</b> <input type="range" min="0" max="0" value="0"></label>` +
+      (steps.length ? `<div class="pg__story"><div class="pg__steps"></div><p class="pg__say"></p></div>` : "") +
       `<div class="pg__bar">` +
         `<button class="pg__step" type="button">Step</button>` +
         `<button class="pg__play" type="button">Play</button>` +
@@ -39,19 +49,23 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
       (cfg.editor ? `<div class="pg__edit"><textarea spellcheck="false" rows="12"></textarea><p class="pg__err" hidden></p><button type="button" class="pg__apply">Apply tree</button></div>` : "") +
     `</div>`;
   const q = (s) => host.querySelector(s);
-  const view = treeView(q(".pg__tree"));
+  const pg = q(".pg");
+  const view = graphView(q(".pg__tree"));
 
+  /* ── the sim ── */
   function boot() {
     stop();
     try { sim = start({ world: W, scenario: cfg.scenario, tree: text }); }
     catch (e) { showErr(e); return; }
     showErr(null);
     cfg.start?.(sim.state);
-    view.render(sim.spec);
-    view.clear();
-    lastStatus = null; done = false;
+    view.render(sim.spec, sim.bt);
+    lastStatus = null; done = false; at = 0; story = steps.length > 0;
+    pg.classList.toggle("pg--story", story);
     if (cfg.counter) q(".pg__count b").textContent = "0";
     paintWorld(null);
+    paintScrub();
+    paintStory();
   }
   function showErr(e) {
     const p = q(".pg__err"); if (!p) { if (e) console.error(e); return; }
@@ -62,13 +76,11 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
     const scripted = (cfg.script ?? []).filter((e) => e.at === sim.t + 1).map((e) => W.hazards.find((h) => h.id === e.hazard));
     hazard = [hazard, ...scripted].filter(Boolean);
     const { status, trace } = advance(sim, hazard);
-    view.paint(trace);
+    view.paint({ t: sim.t, status, trace });
     lastStatus = status;
-    if (cfg.counter) {
-      q(".pg__count b").textContent =
-        String(switchCount(sim.history, sim.bt.root.children.map((c) => c.id)));
-    }
+    if (cfg.counter) q(".pg__count b").textContent = String(switchCount(sim.history, sim.bt.root.children.map((c) => c.id)));
     paintWorld(status);
+    paintScrub();
     if (!done && cfg.goal?.test(sim.state, sim.history)) {
       done = true;
       const g = q(".pg__goal"); g.hidden = false; g.textContent = cfg.goal.done;
@@ -85,6 +97,78 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
       ? `<tr><th colspan="4">writes this tick</th></tr>` + sim.bb.log.map((w) => `<tr><td>${w.node}</td><td>${w.key}</td><td>${w.from ?? ""}</td><td>${w.to}</td></tr>`).join("")
       : "";
   }
+  /* The scrubber replays stored entries into the graph and the tick readout.
+     It never re-simulates, and the map stays at the live state, so nothing on
+     screen is invented: the graph shows a tick that happened, the map the one
+     that is current. Stepping again snaps it back to the end. */
+  function paintScrub() {
+    const r = q(".pg__scrub input"); const n = sim.history.length;
+    r.max = String(Math.max(0, n - 1)); r.value = String(Math.max(0, n - 1)); r.disabled = n < 2;
+    q(".pg__scrub b").textContent = String(sim.t);
+  }
+  q(".pg__scrub input").oninput = (e) => {
+    const i = Number(e.target.value);
+    if (!sim.history[i]) return;
+    view.replay(sim.history, i);
+    q(".pg__scrub b").textContent = String(sim.history[i].t);
+    q(".pg__tick b").textContent = String(sim.history[i].t);
+    q(".pg__tick i").textContent = sim.history[i].status;
+  };
+
+  /* ── the story ── */
+  function paintStory() {
+    if (!steps.length) return;
+    const box = q(".pg__steps"); box.innerHTML = "";
+    steps.forEach((s, i) => {
+      const b = el("button", "pg__stepbtn", String(i + 1)); b.type = "button";
+      b.dataset.at = i < at ? "done" : i === at ? "now" : "todo";
+      b.setAttribute("aria-label", `step ${i + 1} of ${steps.length}`);
+      b.onclick = () => runTo(i, true);
+      box.appendChild(b);
+    });
+    if (at < steps.length) {
+      const next = el("button", "pg__next", at === 0 ? "Start" : "Next"); next.type = "button";
+      next.onclick = () => runTo(at, false);
+      const skip = el("button", "pg__skip", "skip"); skip.type = "button";
+      skip.onclick = () => runTo(at, true);
+      box.append(next, skip);
+    }
+    q(".pg__say").textContent = at === 0 ? "" : q(".pg__say").textContent;
+  }
+  /* Run step i. A click on an earlier step replays from the start at once;
+     the current step animates unless `fast`. */
+  function runTo(i, fast) {
+    stop();
+    if (i < at) { boot(); for (let k = 0; k < i; k++) runStep(k, true); }
+    runStep(i, fast || REDUCED.matches);
+  }
+  function runStep(i, fast) {
+    const step = steps[i];
+    const cap = sim.t + (step.cap ?? 600);
+    let first = true;
+    const tick = () => {
+      const hz = first && step.hazard ? W.hazards.find((h) => h.id === step.hazard) : undefined;
+      first = false;
+      oneTick(hz);
+    };
+    const finish = (ok) => {
+      stop();
+      at = i + 1;
+      q(".pg__say").textContent = ok ? fill(step.say, sim.t) : `This did not happen within ${step.cap ?? 600} ticks.`;
+      if (at === steps.length) { story = false; pg.classList.remove("pg--story"); }
+      paintStory();
+    };
+    const predicateAlready = typeof step.to !== "number" && stepDone(sim, step);
+    if (predicateAlready) return finish(true);
+    if (fast) { while (!stepDone(sim, step) && sim.t < cap) tick(); return finish(stepDone(sim, step)); }
+    timer = setInterval(() => {
+      tick();
+      if (stepDone(sim, step)) finish(true);
+      else if (sim.t >= cap) finish(false);
+    }, 1000 / STORY_RATE);
+  }
+
+  /* ── free play ── */
   function play() {
     if (timer) return;
     q(".pg__play").textContent = "Pause";
@@ -95,7 +179,6 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
     timer = null;
     const b = q(".pg__play"); if (b) b.textContent = "Play";
   }
-
   q(".pg__step").onclick = () => { stop(); oneTick(); };
   q(".pg__play").onclick = () => (timer ? stop() : play());
   q(".pg__reset").onclick = boot;
@@ -110,20 +193,22 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
       b.classList.add("on");
       text = v.tree;
       if (q("textarea")) q("textarea").value = text;
-      /* The mode select is a view of the root's mode, so a variant that carries
-         its own mode has to move it. Chapter 7 is the one chapter with both
-         controls, and it could read "memory" over a tree that is reactive. */
       const sel = q(".pg__mode select");
       if (sel) sel.value = parse(text, leaves).mode ?? "reactive";
       boot();
+      /* A variant is the reader's own choice, so it opens unlocked: the story was
+         told on the scene's own tree. */
+      story = false; pg.classList.remove("pg--story"); at = steps.length; paintStory();
     };
     sw.appendChild(b);
   });
   if (cfg.modes) {
     const lab = el("label", "pg__mode", `root mode <select><option>reactive</option><option>memory</option><option>keep</option></select>`);
-    lab.querySelector("select").onchange = (e) => {
+    const sel = lab.querySelector("select");
+    sel.value = parse(text, leaves).mode ?? "reactive";
+    sel.onchange = (e) => {
       const spec = parse(text, leaves);
-      if (spec.kind === "Sequence" || spec.kind === "Fallback") { spec.mode = e.target.value; text = format(spec); if (q("textarea")) q("textarea").value = text; boot(); }
+      if (spec.kind === "Sequence" || spec.kind === "Fallback") { spec.mode = e.target.value; text = format(spec); if (q("textarea")) q("textarea").value = text; boot(); story = false; pg.classList.remove("pg--story"); at = steps.length; paintStory(); }
     };
     sw.appendChild(lab);
   }
@@ -139,11 +224,11 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   if (cfg.editor) {
     q("textarea").value = text;
     q(".pg__apply").onclick = () => {
-      try { parse(q("textarea").value, leaves); text = q("textarea").value; boot(); }
+      try { parse(q("textarea").value, leaves); text = q("textarea").value; boot(); story = false; pg.classList.remove("pg--story"); at = steps.length; paintStory(); }
       catch (e) { showErr(e instanceof ParseError ? e : new Error(e.message)); }
     };
   }
 
   boot();
-  return () => { stop(); sim = null; };
+  return () => { stop(); view.destroy(); sim = null; };
 }

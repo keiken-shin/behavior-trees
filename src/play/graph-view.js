@@ -3,13 +3,13 @@
    as a class, edges pulse in the order the tick walked, a node that was Running
    and is not visited flashes once (the halt), and a click opens a card that
    reads from the trace and the built tree, nothing else. Pan by drag, zoom by
-   wheel or the buttons, fit to reset. */
+   ctrl+wheel or meta+wheel (also a trackpad pinch) or the buttons, fit to reset. */
 import { layout } from "../bt/layout.js";
 import { node, edge, esc } from "../data/svg.js";
 import { walkOrder } from "../bt/run.js";
 
 const ST = { Success: "ok", Failure: "fail", Running: "run" };
-const OPTS = { nodeW: 104, nodeH: 34, hGap: 8, vGap: 44 };
+const OPTS = { nodeW: 140, nodeH: 34, hGap: 8, vGap: 44 };
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
 let seq = 0;   // a fresh hatch pattern id per view, so two scenes on one page never share a DOM id
 
@@ -20,8 +20,8 @@ export function graphView(host) {
       `<div class="gv__stage"></div>` +
       `<div class="gv__tools">` +
         `<button type="button" class="gv__fit" title="fit the whole tree">fit</button>` +
-        `<button type="button" class="gv__in" aria-label="zoom in">+</button>` +
-        `<button type="button" class="gv__out" aria-label="zoom out">-</button>` +
+        `<button type="button" class="gv__in" aria-label="zoom in" title="zoom in (ctrl or meta + wheel also zooms)">+</button>` +
+        `<button type="button" class="gv__out" aria-label="zoom out" title="zoom out (ctrl or meta + wheel also zooms)">-</button>` +
       `</div>` +
       `<div class="gv__card" hidden></div>` +
     `</div>`;
