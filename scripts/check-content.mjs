@@ -35,8 +35,9 @@ for (const les of LESSONS) {
   const t = (k) => les.flow.some((b) => b.t === k);
   const missing = ["concrete", "myth", "check"].filter((k) => !t(k));
   if (!t("scene") && !t("fig")) missing.push("scene or fig");
-  if (t("play")) missing.push("a play block, which no longer exists");
-  if (missing.length) spineless.push(`${les.id} (no ${missing.join(", ")})`);
+  const notes = missing.length ? [`no ${missing.join(", ")}`] : [];
+  if (t("play")) notes.push("has a play block, which no longer exists");
+  if (notes.length) spineless.push(`${les.id} (${notes.join("; ")})`);
 }
 spineless.length
   ? fail(`chapters missing a spine block: ${spineless.join("; ")}`)
@@ -92,9 +93,9 @@ missingFigs.length
 
 /* ── every scene block that exists resolves ──────────────────────────────── */
 const sceneBlocks = LESSONS.flatMap((les) => les.flow.filter((x) => x.t === "scene").map((b) => ({ les, b })));
-const badPlays = sceneBlocks.filter(({ b }) => !SCENES[b.id]).map(({ les, b }) => `${les.id} → ${b.id}`);
-badPlays.length
-  ? fail(`scene blocks with no configuration in scenes.js: ${badPlays.join(", ")}`)
+const badScenes = sceneBlocks.filter(({ b }) => !SCENES[b.id]).map(({ les, b }) => `${les.id} → ${b.id}`);
+badScenes.length
+  ? fail(`scene blocks with no configuration in scenes.js: ${badScenes.join(", ")}`)
   : pass(`${sceneBlocks.length} scene block(s) resolve; scenes themselves are checked by check-scenes.mjs`);
 
 /* ── the appendix must never become homework ─────────────────────────────── */

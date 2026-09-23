@@ -19,34 +19,6 @@ function line(x1, y1, x2, y2, kind = "ink", cls = "") {
   return `<line class="stroke ${k(kind)} ${cls}" x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}"/>`;
 }
 
-/* `cls` exists so a caller can carry a dash through a partial sweep. Without
-   it the dash option would silently no-op on every arc that is not a full
-   circle. */
-function arc(cx, cy, r, a0, a1, kind = "ink", cls = "") {
-  const p = (a) => [cx + r * Math.cos((a * Math.PI) / 180), cy + r * Math.sin((a * Math.PI) / 180)];
-  const [x0, y0] = p(a0), [x1, y1] = p(a1);
-  const large = Math.abs(a1 - a0) > 180 ? 1 : 0, sweep = a1 > a0 ? 1 : 0;
-  return `<path class="hair ${k(kind)} ${cls}" fill="none"
-    d="M ${n(x0)} ${n(y0)} A ${r} ${r} 0 ${large} ${sweep} ${n(x1)} ${n(y1)}"/>`;
-}
-
-function path(d, kind = "ink", { fill = "none", cls = "" } = {}) {
-  return `<path class="stroke ${k(kind)} ${cls}" d="${d}" fill="${fill}"/>`;
-}
-
-function dashed(x1, y1, x2, y2, kind = "ref") {
-  return `<line class="hair dash ${k(kind)}" x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}"/>`;
-}
-
-function poly(pts, kind = "ink", { cls = "", fill = "none" } = {}) {
-  const d = pts.map(([x, y], i) => `${i ? "L" : "M"} ${n(x)} ${n(y)}`).join(" ");
-  return `<path class="stroke ${k(kind)} ${cls}" fill="${fill}" d="${d}"/>`;
-}
-
-function dot(cx, cy, kind = "ink", r = 5) {
-  return `<circle class="dot ${k(kind)}" cx="${n(cx)}" cy="${n(cy)}" r="${r}"/>`;
-}
-
 /* §3 - labels live in a chip on the figure, never in a legend. */
 function chip(cx, cy, text, kind = "ink", { small = false } = {}) {
   const t = esc(text);
@@ -141,23 +113,6 @@ function tree(spec, { x = 0, y = 0, status = {}, dirty = {}, pulse = {}, hrefs =
   return `<g class="tree">${edges}${nodes}</g>`;
 }
 
-/* ── plot frame ────────────────────────────────────────────────────────── */
-
-/* Returns pixel mappers plus the axis furniture. Data space is 0..1 in both
-   directions; each diagram normalises its own numbers. */
-function frame({ x = 120, y = 66, w = 550, h = 296, xLabel = "", yLabel = "", ticks = true } = {}) {
-  const X = (v) => x + v * w, Y = (v) => y + h - v * h;
-  let s = line(x, y + h, x + w + 14, y + h, "ref", "axis") + line(x, y + h, x, y - 14, "ref", "axis");
-  if (ticks) for (let i = 1; i <= 4; i++) {
-    s += line(X(i / 5), y + h, X(i / 5), y + h + 5, "ref", "axis");
-    s += line(x - 5, Y(i / 5), x, Y(i / 5), "ref", "axis");
-  }
-  if (xLabel) s += note(x + w / 2, y + h + 34, xLabel);
-  if (yLabel) s += `<text class="note" text-anchor="middle" transform="rotate(-90 ${x - 44} ${y + h / 2})"
-    x="${x - 44}" y="${y + h / 2}">${esc(yLabel)}</text>`;
-  return { s, X, Y, x, y, w, h };
-}
-
 /* ── document wrapper ──────────────────────────────────────────────────── */
 
 /* A hatch pattern for dirty conditions. No arrowheads: nothing in this course
@@ -188,6 +143,6 @@ function figure({ title, desc, states = [], captions = [], vb = `0 0 ${VB_W} ${V
 }
 
 export {
-  line, dashed, path, poly, dot, chip, note, arc, frame, figure, n, esc,
+  line, chip, note, figure, n, esc,
   node, edge, craft, tree,
 };

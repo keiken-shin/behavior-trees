@@ -1,8 +1,8 @@
 /* Every authored figure in the project. Each builder returns a complete SVG.
    Colour is never named here, only an answer, so the colour rule holds by
    construction. Trees are written in the text form and laid out by layout.js,
-   so a plate and the playground can never disagree about a tree's shape. */
-import { figure, tree, chip, note, line } from "./svg.js";
+   so a plate and a scene can never disagree about a tree's shape. */
+import { figure, tree, chip, note, line, esc } from "./svg.js";
 import { parse } from "../bt/parse.js";
 import { DRONE } from "../world/drone.js";
 import { nav2ToSpec } from "../bt/nav2.js";
@@ -29,7 +29,7 @@ D["design/backchain"] = () => {
      without help state 4 would show all three trees stacked - "? parcel at
      goal" three times over, "AtWaypoint Goal" sitting on "? at the goal". A
      bare paper rect (no chip-g wrapper: the check's own mask idiom, see
-     blackboard/ports) covers exactly the box the previous tree's nodes occupy
+     scripts/check-figures.mjs) covers exactly the box the previous tree's nodes occupy
      before the next, larger tree is drawn over it. State 4 adds no tree of its
      own, so it needs no mask - it keeps state 3's and only adds the note. */
   const maskS1 = `<rect class="chip" x="96" y="60" width="152" height="130"/>`;
@@ -121,7 +121,9 @@ export function indexTree(lessons) {
   };
   const hrefs = Object.fromEntries(lessons.map((l) => [l.id, `#${l.id}`]));
   const L = layout(spec, { nodeW: 118, nodeH: 40, hGap: 10, vGap: 60 });
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${L.w} ${L.h}" class="figure figure--index" role="img" aria-label="The course drawn as a tree; every leaf is a chapter">` +
+  const title = "The course drawn as a tree; every leaf is a chapter";
+  const desc = "The whole course as one behavior tree: a root Fallback over four Sequences - the tick, control, power, the world - each holding its chapters as leaves. Every leaf is a link to that chapter, not a run.";
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${L.w} ${L.h}" class="figure figure--index" role="img" aria-label="${esc(title)}"><title>${esc(title)}</title><desc>${esc(desc)}</desc>` +
     tree(spec, { hrefs, nodeW: 118, nodeH: 40, hGap: 10, vGap: 60 }) + `</svg>`;
 }
 

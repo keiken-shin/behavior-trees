@@ -8,7 +8,8 @@
  * None of them are visible in the source; all of them are obvious once the
  * marks are given boxes and the boxes are compared.
  *
- * So this renders all 46 builders and measures the output. Four rules:
+ * So this renders all 4 figures - three plate builders and the index tree -
+ * and measures the output. Four rules:
  *   1. no NaN or undefined anywhere in the markup
  *   2. every mark inside its own viewBox
  *   3. no chip-on-chip and no note-on-chip overlap, in any cumulative state
@@ -23,6 +24,7 @@
 
 import { readFileSync } from "node:fs";
 import { tinyXml } from "../src/bt/nav2.js";
+import { LESSONS } from "../src/data/lessons.js";
 
 /* Node has no DOMParser and no ?raw loader: diagrams.js falls back to these
    globals when it does not find them already set (see nav2.js and the
@@ -30,7 +32,7 @@ import { tinyXml } from "../src/bt/nav2.js";
    import below is dynamic rather than static. */
 globalThis.__NAV2 = readFileSync(new URL("../content/nav2.xml", import.meta.url), "utf8");
 globalThis.DOMParser = class { parseFromString(x) { return tinyXml(x); } };
-const { default: D } = await import("../src/data/diagrams.js");
+const { default: D, indexTree } = await import("../src/data/diagrams.js");
 
 /* ── text metrics ──────────────────────────────────────────────────────────
    From app.css: .chip-t is 13px mono, .chip-t.sm 11.5px, .note 12px. Mono
@@ -440,9 +442,13 @@ function audit(key, svg) {
 }
 
 /* ── run ──────────────────────────────────────────────────────────────── */
+/* The index plate is not in D - it takes LESSONS as an argument rather than
+   being a zero-argument builder - so it is added here rather than left out
+   of the guard spec section 7 asks for. */
+const ALL = { ...D, "index/tree": () => indexTree(LESSONS) };
 
 let failed = 0, passed = 0;
-for (const [key, build] of Object.entries(D)) {
+for (const [key, build] of Object.entries(ALL)) {
   let svg;
   try { svg = build(); } catch (e) {
     failed++; console.log(`  FAIL  ${key}\n          threw: ${e.message}`); continue;
