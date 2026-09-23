@@ -4,7 +4,7 @@ import DIAGRAMS from "../data/diagrams.js";
 import { el, mark } from "./util.js";
 import { stepsFor, doneSteps, markStep } from "./steps.js";
 import { openPlayer, closePlayer } from "./player.js";
-import { SCENES } from "../data/scenes.js";
+import { sceneConfig } from "../data/scenes.js";
 import SOURCE_FILE from "../../content/sources.json";
 import { mountPlayground } from "../play/playground.js";
 
@@ -46,22 +46,9 @@ export function renderLesson(root, id) {
 
   const wrap = el("div", "lesson");
   const col = el("div", "col");
-  const benchWrap = el("div", "bench-wrap");
-  const bench = el("div", "bench");
-  benchWrap.appendChild(bench);
 
-  /* ── the bench: one figure at a time, swapped by what you are reading.
-     Only on wide screens - a narrow one gets a plate per reference instead. ── */
-
-  const figIds = les.flow.filter((b) => b.t === "fig").map((b) => b.id);
-  let activeFig = null;
-  let cur = null;      // the bench's controller, on wide screens
-  let pinned = false;  // a manual tab click holds until the figure changes
-
-  /* One figure, its step strip, and the controls over both. The bench uses one
-     of these; on a narrow screen every figure reference gets its own, because a
-     single bench above the reading has scrolled 300px out of sight by the time
-     you reach the paragraph that refers to it. */
+  /* One figure, inline, and the step strip over it. A narrow screen and a wide
+     one now render the same markup - there is no bench left to differ from. */
   function mountFigure(host, figId, plateName) {
     host.innerHTML = `<div class="fig-host">${DIAGRAMS[figId]()}</div><div class="sheets"></div>`;
     const svg = host.querySelector("svg");
@@ -74,13 +61,13 @@ export function renderLesson(root, id) {
        looked clever and failed on the content: a chapter is ~330 words, so a
        section passes in a couple of flicks and four steps blur past with no
        chance to read any of them. Clicking is the reader's own clock. */
-    const c = { svg, total, label, btns, plate: plateName, at: 0, pinned: false };
+    const c = { svg, total, label, btns, plate: plateName, at: 0 };
     if (total > 1) {
       for (let n = 1; n <= total; n++) {
         const b = el("button", "", String(n));
         b.type = "button";
         b.setAttribute("aria-label", `${plateName}, step ${n} of ${total}`);
-        b.onclick = () => { c.pinned = true; pinned = true; setStepOn(c, n); };
+        b.onclick = () => setStepOn(c, n);
         btns.push(b);
         strip.appendChild(b);
       }
@@ -106,35 +93,7 @@ export function renderLesson(root, id) {
     });
   }
 
-  /* Setting the step is separate from swapping the figure, because reading
-     scroll drives the first and the figure references drive the second.
-
-     "Step", not "sheet". In a real parts catalogue Sheet 2 of 4 is a different
-     page carrying different content; these are one drawing at successive stages
-     of its own assembly, each keeping everything before it and adding one thing.
-     The word promised pagination and delivered a build, and readers reasonably
-     concluded they were missing three other figures. */
-  const setStep = (n) => cur && setStepOn(cur, n);
-
-  /* The strip names the PLATE, not just the step. Seven of the twelve lessons
-     give every figure the same step count, so a strip that only ever read
-     "Step 4 of 4" looked frozen while scrolling swapped the drawing beneath it.
-     The plate number is also what ties a figure back to its "Fig. 2-1"
-     reference in the reading. */
-  const plateName = (figId) => `Fig. ${i + 1}-${figIds.indexOf(figId) + 1}`;
-
-  function showFigure(figId) {
-    if (figId === activeFig || !DIAGRAMS[figId]) return;
-    activeFig = figId;
-    pinned = false;
-    cur = mountFigure(bench, figId, plateName(figId));
-  }
-
-  /* ── title block ──
-     Its own element, not the first two children of the reading column, so that
-     on a phone the bench can sit between the title and the reading. Inside the
-     column the bench could only go above everything, and the first viewport
-     then named no lesson. */
+  /* ── title block ── */
   const head = el("div", "lesson__head");
   const title = el("h1", "t-display lesson__title");
   title.textContent = les.title;
@@ -142,10 +101,10 @@ export function renderLesson(root, id) {
   sub.textContent = les.oneLiner;
   head.append(title, sub);
 
-  let figSeen = 0;
+  let figSeen = 0, sceneSeen = 0, sceneNode = null;
   // Kept so the completion list can send the reader to the thing it is asking for.
-  let vidsNode = null, checkNode = null, playNode = null;
-  let target = col;          // flow blocks land here until a figure opens a section
+  let vidsNode = null, checkNode = null;
+  let target = col;          // every flow block lands here, in one column
   les.flow.forEach((b) => {
     let node = null;
     switch (b.t) {
@@ -166,19 +125,18 @@ export function renderLesson(root, id) {
           `<p class="myth__truth">${b.truth}${cite(b.src)}</p></div>`;
         break;
 
-      /* On a wide screen a figure in the text is a REFERENCE and the plate lives
-         on the bench beside it. On a narrow one there is no beside, so the plate
-         is rendered here - see the section wrapper below. */
+      /* A drawing, inline, where the flow places it, with its own step strip.
+         Only three plates survive the move to scenes: the ones that are not
+         runs (the Nav2 tree, the stack, back chaining). */
       case "fig": {
+        if (!DIAGRAMS[b.id]) { console.error("fig block with no builder:", b.id); break; }
         figSeen++;
-        node = el("div", "figref");
-        node.dataset.fig = b.id;
-        node.innerHTML =
-          `<div class="figref__line">` +
-            `<span class="t-label">Fig. ${i + 1}-${figSeen}</span>` +
-            `<span class="figref__rule"></span>` +
-            `<span class="figref__hint">shown on the bench ${mark()}</span>` +
-          `</div>`;
+        node = el("div", "figure-inline");
+        node.appendChild(el("div", "figref__line",
+          `<span class="t-label">Fig. ${i + 1}-${figSeen}</span><span class="figref__rule"></span>`));
+        const plate = el("div", "figref__plate");
+        node.appendChild(plate);
+        mountFigure(plate, b.id, `Fig. ${i + 1}-${figSeen}`);
         break;
       }
 
@@ -191,12 +149,24 @@ export function renderLesson(root, id) {
             : "");
         break;
 
-      /* The play block type is retired; scenes replace it (Task 4 rewrites this
-         case to render a scene). Left as a no-op so a stray "play" block does
-         not crash the build. */
-      case "play":
-        console.log("play block retired, ignored:", b.id);
+      /* A live scene: the interpreter on the real world, told in steps, then
+         handed over. It sits exactly where the flow put it, which is right after
+         the paragraph that set it up. */
+      case "scene": {
+        let cfg;
+        try { cfg = sceneConfig(b.id); } catch (e) { console.error(e.message); break; }
+        sceneSeen++;
+        node = el("div", "scene");
+        node.appendChild(el("div", "scene__cap",
+          `<span>Scene ${i + 1}-${sceneSeen}</span><span>${cfg.steps.length ? `${cfg.steps.length} steps, then yours` : "yours"}</span>`));
+        const host = el("div", "scene__host");
+        node.appendChild(host);
+        const stop = mountPlayground(host, cfg, { onDone: () => markStep(les.id, "scene") });
+        const prev = teardown;
+        teardown = () => { stop(); prev?.(); };
+        if (!sceneNode) sceneNode = node;
         break;
+      }
 
       /* Points back into Part I. The chapter title is read from LESSONS rather
          than written here, so renaming a chapter cannot leave a link describing
@@ -296,20 +266,6 @@ export function renderLesson(root, id) {
         break;
       }
     }
-    /* A figure opens a SECTION that runs until the next figure. It exists so the
-       inline plate has something to stick inside: `position: sticky` is bounded
-       by its parent, and a plate whose parent is only as tall as itself has no
-       range at all - it read as sticky and behaved as static, sliding straight
-       off the top. The section is that range, and it ends exactly where the
-       figure stops being what you are reading about. */
-    if (b.t === "fig") {
-      target = el("div", "fig-section");
-      target.dataset.fig = b.id;
-      col.appendChild(target);
-      target.appendChild(node);
-      target.appendChild(el("div", "figref__plate"));
-      return;
-    }
     if (node) target.appendChild(node);
   });
 
@@ -331,15 +287,8 @@ export function renderLesson(root, id) {
       { href: "#" + LESSONS[i + 1].id }));
 
   /* ── after the chapter ──────────────────────────────────────────────────
-     The apply surface and the footer nav sit OUTSIDE the two-column grid, as
-     plain blocks beneath it. That placement is the whole fix.
-
-     Inside the grid they were a third row under a sticky element, and a sticky
-     element overhangs the row after it rather than stopping at it - so the
-     launch control was drawn straight across the figure's caption. Painting it
-     over the bench made the collision opaque instead of removing it. Out here
-     the grid has ended, the bench has nowhere left to reach, and both can have
-     the full width honestly.
+     The apply surface and the footer nav sit outside the reading column, as
+     plain blocks beneath it, so both can have the full width honestly.
 
      Order matters too: read the chapter, fly it, then leave. The footer nav used
      to sit above the playground inside the reading column, which put "next chapter"
@@ -358,7 +307,7 @@ export function renderLesson(root, id) {
      derived from the chapter's own content in steps.js, not declared here. */
   const steps = stepsFor(les.id);
   const stepsBox = el("div", "steps");
-  const jump = { video: () => vidsNode, check: () => checkNode, play: () => playNode };
+  const jump = { video: () => vidsNode, check: () => checkNode, scene: () => sceneNode };
   function paintSteps() {
     const done = doneSteps(les.id);
     const n = steps.filter((s) => done[s.key]).length;
@@ -387,50 +336,8 @@ export function renderLesson(root, id) {
 
   if (steps.length) { paintSteps(); after.appendChild(stepsBox); }
   after.append(apply, foot);
-  wrap.append(head, col, benchWrap);
+  wrap.append(head, col);
   root.append(wrap, after);
-
-  showFigure(figIds[0]);
-
-  /* Scroll's only remaining job is deciding WHICH figure the bench holds on a
-     wide screen. Stepping belongs to the reader.
-
-     Driving the build off scroll read well as an idea and failed on the content.
-     A chapter is about 330 words, so a figure's own section passes in a couple
-     of flicks and four steps blur past unread. The strip opens complete, says
-     what it is, and waits to be tapped. */
-  const sections = [...col.querySelectorAll(".fig-section")];
-  if (sections.length) {
-    const NARROW = matchMedia("(max-width: 1020px)");
-
-    /* Narrow screens have no bench, so every section carries its own plate.
-       Mounted on first narrow use, not up front: on a wide screen these are
-       display:none, and rendering SVGs nobody will see is work for nothing. */
-    const inline = [];
-    const mountInline = () => {
-      if (inline.length) return;
-      sections.forEach((s) => inline.push(
-        mountFigure(s.querySelector(".figref__plate"), s.dataset.fig, plateName(s.dataset.fig))));
-    };
-
-    const track = () => {
-      if (NARROW.matches) return mountInline();
-      const line = scrollY + innerHeight * 0.34;
-      const tops = sections.map((s) => s.getBoundingClientRect().top + scrollY);
-      let k = 0;
-      for (let n = 0; n < tops.length; n++) if (tops[n] <= line) k = n;
-      showFigure(sections[k].dataset.fig);
-    };
-    addEventListener("scroll", track, { passive: true });
-    addEventListener("resize", track, { passive: true });
-    track();
-    const prev = teardown;
-    teardown = () => {
-      removeEventListener("scroll", track);
-      removeEventListener("resize", track);
-      prev?.();
-    };
-  }
 
   document.title = `${les.title} · ${PARTS.find((p) => p.n === (les.part ?? 1))?.title ?? COURSE}`;
   window.scrollTo(0, 0);

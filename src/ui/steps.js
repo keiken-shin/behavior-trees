@@ -23,7 +23,7 @@ import { progress, saveProgress } from "./util.js";
 const STEPS = {
   video: { label: "Watch a clip to the end", hint: "any one of them" },
   check: { label: "Answer the stage check correctly", hint: "wrong answers do not count" },
-  play: { label: "Make it happen in the playground", hint: "the goal latches once met" },
+  scene: { label: "Run a scene to the end and meet its goal", hint: "the goal latches once met" },
 };
 
 export function stepsFor(id) {
@@ -31,7 +31,7 @@ export function stepsFor(id) {
   const keys = [];
   if ((VIDEOS[id] || []).length) keys.push("video");
   if (les?.flow.some((b) => b.t === "check")) keys.push("check");
-  if (les?.flow.some((b) => b.t === "scene" && SCENES[b.id]?.then?.goal)) keys.push("play");
+  if (les?.flow.some((b) => b.t === "scene" && SCENES[b.id]?.then?.goal)) keys.push("scene");
   return keys.map((key) => ({ key, ...STEPS[key] }));
 }
 
@@ -39,8 +39,11 @@ export function stepsFor(id) {
    option was clicked, right or wrong. It is read as "all of it" so that nobody
    who finished chapters under the old rule watches them empty out. */
 export function doneSteps(id) {
-  const e = progress()[id];
+  let e = progress()[id];
   if (e === true) return Object.fromEntries(stepsFor(id).map((s) => [s.key, true]));
+  // Version one's key was `play`; map it to `scene` so a goal met under the
+  // old name still shows done rather than emptying out under the new one.
+  if (e && e.play && !e.scene) e = { ...e, scene: true };
   return e || {};
 }
 

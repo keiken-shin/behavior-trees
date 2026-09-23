@@ -306,20 +306,12 @@ button { font: inherit; color: inherit; }
   .cards__go, .cards__go2, .cards__pick { width: 100%; justify-content: space-between; }
 }
 
-/* ── lesson: text column + pinned bench ────────────────────────────────── */
+/* ── lesson: one reading column ───────────────────────────────────────── */
 
-/* Three children, two rows: the title block sits above the reading in the left
-   column while the bench spans both rows on the right. Splitting the head out of
-   the reading column is what lets the phone put the bench BETWEEN them, so the
-   first viewport still names the lesson. */
-.lesson { display: grid; grid-template-columns: minmax(0, 46fr) minmax(0, 54fr); gap: 0 var(--gutter); }
-.lesson__head { grid-column: 1; grid-row: 1; padding-top: 40px; min-width: 0; }
-.col { grid-column: 1; grid-row: 2; padding: 0 0 40px; min-width: 0; }
-/* Everything after the chapter lives BELOW the grid, not in a third row of it.
-   A third row sits under the sticky bench, which overhangs the row after it
-   rather than stopping at it - that is what drew the launch control across the
-   figure's caption. Out here the grid has ended and there is nothing to collide
-   with, so full width is honest rather than a fight. */
+.lesson { display: block; }
+.lesson__head { padding-top: 40px; min-width: 0; }
+.col { padding: 0 0 40px; min-width: 0; }
+/* Everything after the chapter lives below the column, as plain blocks. */
 .after { padding-bottom: 20px; }
 .apply { margin-bottom: 34px; }
 
@@ -365,15 +357,7 @@ button { font: inherit; color: inherit; }
 .steps__row .mk { color: var(--accent); }
 .apply .launch { border: var(--w-rule) solid var(--ink); border-top-width: var(--w-rule); }
 .col > *, .lesson__head > * { max-width: 68ch; }   /* body measure, per the craft floor */
-
-/* Pinned, and never taller than what is left of the viewport - a bench that
-   overflows stops being pinned and starts being a very tall column. */
-.bench-wrap {
-  grid-column: 2; grid-row: 1 / span 2;
-  position: sticky; top: calc(var(--margin-rail) + 58px);
-  height: fit-content; max-height: calc(100vh - var(--margin-rail) * 2 - 66px);
-  overflow: auto; padding-top: 40px;
-}
+.col > .scene, .col > .figure-inline { max-width: none; }   /* a scene and an inline plate break out wider */
 
 .lesson__title { margin-bottom: .5em; }
 .lesson__sub { color: var(--ink-2); font-size: 19px; max-width: 40ch; margin-bottom: 2.4em; }
@@ -389,23 +373,14 @@ button { font: inherit; color: inherit; }
 .aside { color: var(--ink-2); font-size: 15px; border-left: var(--w-hair) solid var(--rule);
          padding-left: 18px; margin: 0 0 2em; }
 
-/* A figure reference, not the figure. The plate lives on the bench; this is the
-   manual's own way of pointing at it, and it is what drives the swap on scroll. */
-.figref { margin: 2em 0; }
+/* A drawing, inline, where the flow places it. */
+.figure-inline { margin: 2em 0; }
 .figref__line {
   display: flex; align-items: center; gap: 12px; padding-bottom: 5px;
   border-bottom: var(--w-hair) solid var(--rule);
 }
-/* Wide screens keep the plate on the bench; the inline copy is the narrow-screen
-   half of the same mechanic and never shows here. */
-.figref__plate { display: none; }
+.figref__plate { display: block; margin-top: 10px; background: var(--paper); border: var(--w-rule) solid var(--ink); }
 .figref__rule { flex: 1; height: var(--w-hair); background: var(--rule-soft); }
-.figref__hint {
-  display: inline-flex; align-items: center; gap: 7px;
-  font-family: var(--f-mono); font-size: 10px; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--ink-3);
-}
-@media (max-width: 1020px) { .figref__hint { display: none; } }
 
 /* Misconception. No kicker label: a drawn revision triangle carries the flag,
    which is the manual's own mark for "the previous issue was wrong". The box is
@@ -571,10 +546,8 @@ button { font: inherit; color: inherit; }
               padding: 14px 18px; border-top: var(--w-rule) solid var(--ink); }
 .check__why[hidden] { display: none; }
 
-/* ── the bench ─────────────────────────────────────────────────────────── */
+/* ── an inline plate's drawing ────────────────────────────────────────── */
 
-.bench { border: var(--w-rule) solid var(--ink); }
-.bench .fig-host { position: relative; }
 .fig-host svg.figure { display: block; width: 100%; height: auto; }
 /* nav2/tree is the one plate wide enough (2904px) that shrinking it to the
    column width put its 9px labels on screen at about 2px. It carries its own
@@ -733,28 +706,9 @@ button { font: inherit; color: inherit; }
      the top and bottom rails remain, so the frame still reserves their height. */
   :root { --margin-rail: 20px; --gutter: 28px; --rail-gap: 8px; }
   .zone--left, .zone--right { display: none; }
-  /* One column - and NO bench. A single plate above the reading has scrolled
-     278px out of sight by the time you reach the paragraph that refers to it,
-     so the whole progressive build happened where nobody could see it. Each
-     reference carries its own plate instead, and that plate sticks under the
-     header for exactly as long as its own prose is being read. The screen gives
-     up space only while a figure is relevant, which on a chapter with two or
-     three figures is most of the reading returned. */
-  .lesson { grid-template-columns: minmax(0, 1fr); }
-  .lesson__head, .col { grid-column: 1; grid-row: auto; }
-  .lesson__head { order: 0; padding-top: 24px; }
-  .bench-wrap { display: none; }
-  .col { order: 2; }
+  .lesson__head { padding-top: 24px; }
   .lesson__sub { margin-bottom: 1.4em; }
 
-  /* Not sticky. A pinned plate held the top of the screen through the Watch
-     list and the stage check, where it had nothing to say, and pinning only
-     existed to serve a scroll-driven build that no longer exists. It sits where
-     its reference is, and the reader taps through it there. */
-  .figref__plate {
-    display: block; margin-top: 10px;
-    background: var(--paper); border: var(--w-rule) solid var(--ink);
-  }
   .figref__plate .fig-host svg.figure { display: block; width: 100%; height: auto; }
   .figref__plate .fig-host:has(svg.figure--wide) { overflow-x: auto; }
   .figref__plate .fig-host svg.figure--wide { width: auto; max-width: none; height: auto; }
@@ -772,6 +726,13 @@ button { font: inherit; color: inherit; }
 }
 @media (max-width: 620px) {
   body { font-size: 16px; }
+  /* The bar's meta text, the index link and the plate toggle do not shrink
+     below their own content - on a narrow phone that content no longer fits
+     one row beside the wordmark, and a flex row that cannot shrink overflows
+     sideways instead. Wrapping, forced right after the spacer so the wordmark
+     always keeps its own line, keeps every page's header inside the viewport. */
+  .bar { flex-wrap: wrap; row-gap: 6px; }
+  .bar__spacer { flex-basis: 100%; height: 0; }
   /* REMARKS is the one-line summary of each lesson - the most useful column on
      a phone, so it wraps under the title instead of being dropped. A table
      flattened to inline-blocks reflows raggedly: long titles drop below the item
@@ -821,7 +782,10 @@ button { font: inherit; color: inherit; }
   font-family: var(--f-mono); font-size: 10px; letter-spacing: .12em;
   text-transform: uppercase; color: var(--ink-3);
 }
-.src__cap span:first-child { font-weight: 600; color: var(--ink); }
+/* A source's own filename can be one long unbroken word (an XML path, a slug)
+   that a flex child never shrinks below by default - on a narrow phone that
+   pushed the whole page wider than the viewport. */
+.src__cap span:first-child { font-weight: 600; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
 .src__cap span:last-child { margin-left: auto; }
 .src__who { margin: 13px 14px 0; font-size: 15px; font-weight: 600; }
 .src__what { margin: 6px 14px 0; font-size: 15px; color: var(--ink-2); }
@@ -838,9 +802,6 @@ button { font: inherit; color: inherit; }
 .credits__foot code { font-family: var(--f-mono); font-size: 13px; color: var(--ink); }
 
 /* ── the playground ──────────────────────────────────────────────────────── */
-.play { margin: 28px 0; border: var(--w-rule) solid var(--ink); }
-.play__cap { display: flex; justify-content: space-between; padding: 6px 10px; border-bottom: var(--w-hair) solid var(--rule);
-  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 .pg { padding: 12px; }
 .pg__brief { margin: 0 0 12px; color: var(--ink-2); }
 .pg__panes { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; align-items: start; }
@@ -925,3 +886,16 @@ button { font: inherit; color: inherit; }
   font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
 .pg__scrub input { flex: 1; accent-color: var(--accent); }
 .pg__scrub input:disabled { opacity: .4; }
+
+/* ── a scene ────────────────────────────────────────────────────────────── */
+.scene { margin: 28px 0; border: var(--w-rule) solid var(--ink); }
+.scene__cap { display: flex; justify-content: space-between; padding: 6px 10px; border-bottom: var(--w-hair) solid var(--rule);
+  font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.scene .pg__panes { grid-template-columns: 3fr 2fr; }
+.scene .gv__stage svg { max-height: 400px; }
+.scene .pg__world svg { max-height: 400px; width: 100%; height: auto; }
+.steps { max-width: none; }
+@media (max-width: 1020px) {
+  .scene .pg__panes { grid-template-columns: 1fr; }
+  .scene .gv__stage svg, .scene .pg__world svg { max-height: 300px; }
+}
