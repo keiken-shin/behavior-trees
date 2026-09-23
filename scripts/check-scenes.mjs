@@ -35,6 +35,17 @@ for (const [id, sc] of Object.entries(SCENES)) {
   });
 }
 
+/* ── every hazard id named is a real hazard in the scene's world ─────────── */
+for (const [id, sc] of Object.entries(SCENES)) {
+  const ids = new Set(WORLDS[sc.world].hazards.map((h) => h.id));
+  t(`${id}: hazard ids are real`, () => {
+    for (const step of sc.steps)
+      if (step.hazard) assert.ok(ids.has(step.hazard), `${id}: no such hazard "${step.hazard}"`);
+    for (const h of sc.then?.hazards ?? [])
+      assert.ok(ids.has(h), `${id}: no such hazard "${h}"`);
+  });
+}
+
 /* ── every step's moment comes ───────────────────────────────────────────── */
 for (const [id, sc] of Object.entries(SCENES)) {
   t(`${id}: ${sc.steps.length} step(s) reach their moment`, () => {

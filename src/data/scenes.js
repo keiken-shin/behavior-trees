@@ -174,7 +174,7 @@ SCENES["decorators/kinds"] = {
   steps: [
     { say: "Two rhombuses, each with exactly one child. Neither has had to rule yet.", to: 1 },
     { say: "Parcel dropped at tick {t}. The flight home starts, under the timeout.", to: (s) => s.delivered, cap: 400 },
-    { say: "The flight home ran 200 ticks under the timeout; at tick {t} the timeout halted ReturnHome and answered Failure, so the delivery failed.", hazard: "gust", to: (s, h) => answered(h, "n9", "Failure"), cap: 2500 },
+    { say: "A gust from the west. The flight home ran 200 ticks under the timeout; at tick {t} the timeout halted ReturnHome and answered Failure, so the delivery failed.", hazard: "gust", to: (s, h) => answered(h, "n9", "Failure"), cap: 2500 },
   ],
   then: { hazards: ["gust", "calm"], brief: "Reset and play without the gust: the flight home finishes inside 200 ticks and the timeout never speaks.",
     goal: { test: (s, h) => h.some((x) => x.trace.some((n) => n.status === "Failure" && n.id === "n9")), done: "The timeout gave up on the flight. The Sequence failed, and the tree is asked again." } },
