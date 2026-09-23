@@ -1,7 +1,8 @@
 /* The tree as a live graph. Layout comes from layout.js and shapes from svg.js,
    so it is the plate primitives made live: nodes take the interpreter's answer
    as a class, edges pulse in the order the tick walked, a node that was Running
-   and is not visited flashes once (the halt), and a click opens a card that
+   and is not visited flashes once (the halt), so does a node the trace marks
+   halted inside the tick (a Timeout giving up), and a click opens a card that
    reads from the trace and the built tree, nothing else. Pan by drag, zoom by
    ctrl+wheel or meta+wheel (also a trackpad pinch) or the buttons, fit to reset.
    The tree never starts smaller than reading size: when the whole of it would
@@ -138,6 +139,7 @@ export function graphView(host) {
       n.args?.length ? ["args", n.args.join(" ")] : null,
       ["answer", e ? e.status : "not asked this tick"],
       e?.dirty ? ["dirty", "changed the world while answering"] : null,
+      e?.halted ? ["halted", "in this tick, after it answered"] : null,
       e?.error ? ["error", e.error] : null,
       memory,
     ].filter(Boolean);
@@ -183,6 +185,7 @@ export function graphView(host) {
         const g = byId.get(x.id); if (!g) continue;
         g.classList.remove("st-idle"); g.classList.add(`st-${ST[x.status] ?? "idle"}`);
         if (x.dirty) g.classList.add("dirty");
+        if (x.halted && !REDUCED.matches) g.classList.add("halt");   // answered Running, then halted in the same tick
         if (x.error) { g.classList.add("err"); g.insertAdjacentHTML("afterbegin", `<title class="err-t">${esc(x.error)}</title>`); }
       }
       edgeTo.forEach((l) => { l.classList.remove("pulse"); l.style.animationDelay = ""; });

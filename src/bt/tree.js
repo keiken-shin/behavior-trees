@@ -55,14 +55,20 @@ export function tick(tree, world, bb) {
   const trace = [];
   const status = visit(tree.root, tree, world, bb, trace);
   for (const node of tree.all)
-    if (node.st.status === S.RUNNING && node.st.seen !== tree.tickNo) halt(node, world);
+    if (node.st.status === S.RUNNING && node.st.seen !== tree.tickNo) halt(node, world, tree.tickNo);
+  /* A node can answer Running and be halted in the same tick (a Timeout
+     giving up); its trace entry says so, or the drawing would lie. */
+  for (const e of trace)
+    if (tree.all.find((x) => x.id === e.id).st.haltedAt === tree.tickNo) e.halted = true;
   return { status, trace };
 }
 
-export function halt(node, world) {
-  for (const c of node.children) halt(c, world);
-  if (node.st.status === S.RUNNING) node.impl?.halt?.(world, node);
+export function halt(node, world, tickNo) {
+  for (const c of node.children) halt(c, world, tickNo);
+  const was = node.st.status === S.RUNNING;
+  if (was) node.impl?.halt?.(world, node);
   node.st = fresh();
+  if (was) node.st.haltedAt = tickNo;
 }
 
 export function reset(tree, world) {
@@ -153,7 +159,7 @@ function decorate(node, tree, world, bb, trace) {
       return S.RUNNING;
     case "Timeout":
       if (r !== S.RUNNING) { st.runFor = 0; return r; }
-      if (++st.runFor > n) { halt(child, world); st.runFor = 0; return S.FAILURE; }
+      if (++st.runFor > n) { halt(child, world, tree.tickNo); st.runFor = 0; return S.FAILURE; }
       return S.RUNNING;
     default:
       throw new Error(`unknown decorator "${type}"`);

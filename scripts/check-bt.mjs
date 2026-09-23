@@ -169,6 +169,17 @@ t("Timeout 2: a child Running for a third tick is halted and Failure returned", 
   assert.equal(tick(tree, w, bb).status, S.FAILURE);
   assert.equal(L.a.halts, 1);
 });
+t("Timeout: a child halted inside the tick is marked halted in the trace; a plain Running child is not", () => {
+  const L = { a: scripted("action", [S.RUNNING]) };
+  const tree = build(DEC("Timeout", 1, A("a")), L), bb = makeBlackboard(), w = world();
+  const child = tree.root.children[0].id;
+  const first = tick(tree, w, bb).trace.find((e) => e.id === child);
+  assert.equal(first.status, S.RUNNING);
+  assert.equal("halted" in first, false);
+  const fired = tick(tree, w, bb).trace.find((e) => e.id === child);
+  assert.equal(fired.status, S.RUNNING);
+  assert.equal(fired.halted, true);
+});
 t("Repeat 2: Running after the first Success, Success after the second", () => {
   const L = { a: scripted("action", [S.SUCCESS]) };
   const tree = build(DEC("Repeat", 2, A("a")), L), bb = makeBlackboard(), w = world();
