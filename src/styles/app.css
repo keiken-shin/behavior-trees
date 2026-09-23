@@ -384,6 +384,9 @@ button { font: inherit; color: inherit; }
 /* The concrete anchor - the 5-year-old rung. A thin ruled box, which is this
    world's device for set-apart text; a thick coloured left bar is the generic
    callout the craft floor bans. */
+/* 68ch at its own 18 px would overhang the paragraphs' 68ch at 16.5 px; this
+   is their measure in its font, so the box shares the text's right edge. */
+.col > .concrete { max-width: calc(68ch * 16.5 / 18); }
 .concrete {
   border: var(--w-hair) solid var(--rule);
   padding: 17px 19px; margin: 0 0 2em;
@@ -615,7 +618,7 @@ button { font: inherit; color: inherit; }
 .mk-h { fill: currentColor; stroke: none; }
 
 /* footer nav */
-/* Below the reading column, and after the playground: read the chapter, fly it,
+/* Below the reading column, at the chapter's end: read it, fly its scenes,
    then leave. Held to the same 68ch measure as the text and the steps box above
    it, so the after-block reads as one aligned column rather than three unrelated
    widths. It wraps rather than taking a minimum width: a floor would push it
@@ -793,6 +796,7 @@ button { font: inherit; color: inherit; }
 /* ── the playground ──────────────────────────────────────────────────────── */
 .pg { padding: 12px; }
 .pg__brief { margin: 0 0 12px; color: var(--ink-2); }
+.pg__story + .pg__brief { margin: 10px 0 0; }   /* a scene's brief, under its step strip */
 .pg__panes { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; align-items: start; }
 .pg__tree svg { width: 100%; height: auto; }
 .pg__bar, .pg__switches, .pg__hazards { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
@@ -836,7 +840,7 @@ button { font: inherit; color: inherit; }
    the tree, which a width-keyed fix would not: the reader can make a tree
    narrower than any breakpoint predicts. */
 .gv__stage { padding-top: 34px; }
-.gv__stage svg { display: block; width: 100%; height: auto; max-height: 400px; margin: 0 auto; cursor: grab; touch-action: none; }
+.gv__stage svg { display: block; width: 100%; height: auto; max-height: 400px; margin: 0 auto; cursor: grab; touch-action: pan-y pinch-zoom; }
 .gv__stage svg:active { cursor: grabbing; }
 /* The tree goes on past this edge: the view is a window on a wider tree, so
    the cut side fades out rather than slicing a label with a hard edge. */
@@ -847,12 +851,15 @@ button { font: inherit; color: inherit; }
 .gv__tools { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; }
 .gv__tools button { font-family: var(--f-mono); font-size: 11px; padding: 3px 7px; background: var(--paper); color: var(--ink);
   border: var(--w-hair) solid var(--rule); cursor: pointer; }
-.gv__card { position: absolute; left: 6px; bottom: 6px; max-width: 260px; padding: 8px 10px 8px;
+.gv__card { position: absolute; left: 6px; bottom: 6px; max-width: 260px; padding: 8px 26px 8px 10px;
   background: var(--paper); border: var(--w-rule) solid var(--ink); font-family: var(--f-mono); font-size: 11px; }
 .gv__card dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }
 .gv__card dt { color: var(--ink-3); }
 .gv__card dd { margin: 0; color: var(--ink); }
-.gv__close { position: absolute; top: 2px; right: 4px; border: 0; background: none; font-family: var(--f-mono); cursor: pointer; color: var(--ink-3); }
+/* Two classes deep, so `.pg button`'s boxed look does not land on it and
+   cover the first row of the card. */
+.gv .gv__close { position: absolute; top: 4px; right: 4px; padding: 2px 6px; font-size: 11px; line-height: 1;
+  border: 0; background: none; font-family: var(--f-mono); cursor: pointer; color: var(--ink-3); }
 .tree-live .node.picked rect, .tree-live .node.picked ellipse, .tree-live .node.picked polygon { stroke-width: 2.5; }
 /* The walk: each edge the tick crossed draws itself once, in order. The
    dash is the tick pulse colour, because a pulse is the tick, not an answer. */
