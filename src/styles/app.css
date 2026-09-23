@@ -313,7 +313,6 @@ button { font: inherit; color: inherit; }
 .col { padding: 0 0 40px; min-width: 0; }
 /* Everything after the chapter lives below the column, as plain blocks. */
 .after { padding-bottom: 20px; }
-.apply { margin-bottom: 34px; }
 
 /* ── what the chapter still wants ─────────────────────────────────────────
    Built as an inspection block, like the stage check: a caption strip with a
@@ -321,11 +320,10 @@ button { font: inherit; color: inherit; }
    Same furniture as the answer key, because it is the same kind of object - a
    list of things checked off, not a progress bar. Rows are buttons: each one
    is the way back to the thing it is asking for. */
-/* Held to the reading column, same as the launch strip and the footer below it -
-   the three of them share a right edge or the after-block reads as three
+/* Held to the same 68ch measure as the text and the footer below it, so the
+   three share one right edge instead of the after-block reading as three
    unrelated boxes. */
-.steps { border: var(--w-rule) solid var(--ink); margin-bottom: 26px;
-         max-width: calc((100% - var(--gutter)) * .46); }
+.steps { border: var(--w-rule) solid var(--ink); margin-bottom: 26px; max-width: 68ch; }
 .steps__cap {
   display: flex; justify-content: space-between; gap: 14px;
   padding: 8px 12px; background: var(--paper-sunk);
@@ -355,9 +353,12 @@ button { font: inherit; color: inherit; }
 .steps__row.done { color: var(--ink-3); }
 .steps__row.done .steps__k { border-color: var(--s-ok); }
 .steps__row .mk { color: var(--accent); }
-.apply .launch { border: var(--w-rule) solid var(--ink); border-top-width: var(--w-rule); }
 .col > *, .lesson__head > * { max-width: 68ch; }   /* body measure, per the craft floor */
-.col > .scene, .col > .figure-inline { max-width: none; }   /* a scene and an inline plate break out wider */
+/* Breaks out past the text measure, up to a laptop's own width, and no
+   further - spec section 2 caps it "about 880 px" so it never turns into the
+   full viewport on a wide monitor. Centred, not flush to the text's own left
+   edge, so the overhang reads as one deliberate wide plate. */
+.col > .scene, .col > .figure-inline { max-width: 880px; margin-left: auto; margin-right: auto; }
 
 .lesson__title { margin-bottom: .5em; }
 .lesson__sub { color: var(--ink-2); font-size: 19px; max-width: 40ch; margin-bottom: 2.4em; }
@@ -589,32 +590,6 @@ button { font: inherit; color: inherit; }
   background: var(--ink); border-color: var(--ink); color: var(--paper); font-weight: 600;
 }
 
-/* The primary action lives in the plate's own caption strip as a hairline
-   control - not a filled slab. A solid magenta rectangle spends the whole
-   colour budget on chrome and leaves the lesson's first viewport with no
-   semantic colour at all, which is the exact opposite of the thesis. */
-.launch {
-  /* Label and arrow travel together. Pushed to opposite ends of a 700px strip
-     they stop reading as one control and the click target goes ambiguous. */
-  /* Stops where the reading column stops. A control stretched across two
-     thousand pixels reads as a banner rather than something you click - but
-     "half the page" is a number, not an edge: it lands past the column line and
-     54px inside the bench, aligned with nothing. This is column 1 of .lesson's
-     46/54 grid, so the strip's right edge is one gutter left of the bench, the
-     same relationship every other row in the page already has. */
-  display: flex; width: 100%; max-width: calc((100% - var(--gutter)) * .46);
-  align-items: center; gap: 9px;
-  padding: 9px 12px; cursor: pointer; text-align: left;
-  background: none; color: var(--ink);
-  border: 0; border-top: var(--w-hair) solid var(--rule); border-radius: 0;
-  font-family: var(--f-mono); font-size: 10.5px; font-weight: 600;
-  letter-spacing: .13em; text-transform: uppercase;
-}
-.launch:hover { background: var(--paper-sunk); }
-.launch:disabled { color: var(--ink-3); cursor: default; }
-.launch .mk { color: var(--accent); }
-.launch:disabled .mk { color: var(--ink-3); }
-
 /* The drawn interface arrow. Same flat tail and solid head as the force arrows
    in the figures, so an arrow is one object in this world rather than two. */
 .mk { width: 18px; height: 10px; flex: none; display: inline-block; vertical-align: -1px; }
@@ -622,15 +597,13 @@ button { font: inherit; color: inherit; }
 .mk-h { fill: currentColor; stroke: none; }
 
 /* footer nav */
-/* Below the grid rather than inside the reading column, and after the playground:
-   read the chapter, fly it, then leave. Held to the reading column like the
-   launch strip above it, so the two share a right edge - left full width, the
-   dashed index box inflates to fill a whole screen and the three links drift so
-   far apart they stop reading as one row. It wraps rather than taking a minimum
-   width: a floor would push it back past the column line on middling screens,
-   which is the misalignment being fixed. */
+/* Below the reading column, and after the playground: read the chapter, fly it,
+   then leave. Held to the same 68ch measure as the text and the steps box above
+   it, so the after-block reads as one aligned column rather than three unrelated
+   widths. It wraps rather than taking a minimum width: a floor would push it
+   past that measure on middling screens, which is the misalignment being fixed. */
 .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px;
-        max-width: calc((100% - var(--gutter)) * .46);
+        max-width: 68ch;
         padding-top: 22px; border-top: var(--w-rule) solid var(--ink); }
 .foot a { display: inline-flex; align-items: center; gap: 9px;
           text-decoration: none; padding: 13px 16px; border: var(--w-hair) solid var(--rule);
@@ -709,13 +682,6 @@ button { font: inherit; color: inherit; }
   .lesson__head { padding-top: 24px; }
   .lesson__sub { margin-bottom: 1.4em; }
 
-  .figref__plate .fig-host svg.figure { display: block; width: 100%; height: auto; }
-  .figref__plate .fig-host:has(svg.figure--wide) { overflow-x: auto; }
-  .figref__plate .fig-host svg.figure--wide { width: auto; max-width: none; height: auto; }
-  .figref__plate .sheets { border-top: var(--w-hair) solid var(--rule); }
-  .apply { padding-bottom: 30px; }
-  /* One column here, so there is no column-1 edge left to align to. */
-  .apply .launch, .foot, .steps { max-width: none; }
   .home__lede { grid-template-columns: minmax(0, 1fr); gap: 18px; }
 
   /* The plate is the only navigation, so it may not shrink into illegibility.
@@ -891,11 +857,15 @@ button { font: inherit; color: inherit; }
 .scene { margin: 28px 0; border: var(--w-rule) solid var(--ink); }
 .scene__cap { display: flex; justify-content: space-between; padding: 6px 10px; border-bottom: var(--w-hair) solid var(--rule);
   font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-.scene .pg__panes { grid-template-columns: 3fr 2fr; }
-.scene .gv__stage svg { max-height: 400px; }
-.scene .pg__world svg { max-height: 400px; width: 100%; height: auto; }
-.steps { max-width: none; }
+/* The story stage (caption, panes, scrubber, strip and the blackboard board
+   that is still showing, locked) has to fit in 480px on a wide screen so a
+   scene never fills it - the 880px width cap alone is not enough, because the
+   world map's own aspect ratio still fills whatever height that width gives
+   it. 120px measured (script, not by eye) at 480px total or under at 1280,
+   1440 and 1920 - the three widths give the same number because the scene's
+   own width no longer grows with the window past 880px. */
+.scene .gv__stage svg { max-height: 120px; }
+.scene .pg__world svg { max-height: 120px; width: 100%; height: auto; }
 @media (max-width: 1020px) {
-  .scene .pg__panes { grid-template-columns: 1fr; }
   .scene .gv__stage svg, .scene .pg__world svg { max-height: 300px; }
 }

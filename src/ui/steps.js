@@ -31,7 +31,7 @@ export function stepsFor(id) {
   const keys = [];
   if ((VIDEOS[id] || []).length) keys.push("video");
   if (les?.flow.some((b) => b.t === "check")) keys.push("check");
-  if (les?.flow.some((b) => b.t === "scene" && SCENES[b.id]?.then?.goal)) keys.push("scene");
+  if (les?.flow.some((b) => b.t === "scene" && SCENES[b.id])) keys.push("scene");
   return keys.map((key) => ({ key, ...STEPS[key] }));
 }
 

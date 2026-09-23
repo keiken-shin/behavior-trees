@@ -77,7 +77,6 @@ export function renderLesson(root, id) {
        finished drawing, so the finished drawing is what has to be there; the
        tabs replay how it got that way. */
     setStepOn(c, total);
-    return c;
   }
 
   function setStepOn(c, n) {
@@ -104,7 +103,6 @@ export function renderLesson(root, id) {
   let figSeen = 0, sceneSeen = 0, sceneNode = null;
   // Kept so the completion list can send the reader to the thing it is asking for.
   let vidsNode = null, checkNode = null;
-  let target = col;          // every flow block lands here, in one column
   les.flow.forEach((b) => {
     let node = null;
     switch (b.t) {
@@ -173,9 +171,6 @@ export function renderLesson(root, id) {
          the old one - the same reason the deck derives its cards instead of
          holding copies. */
       case "ref": {
-        /* NOT `target` - the enclosing scope already has a `let target` that the
-           post-switch append uses. Shadowing it here is legal and works and is a
-           merge landmine. */
         const dest = LESSONS[b.ch - 1];
         if (!dest) break;
         node = el("div", "xref");
@@ -266,7 +261,7 @@ export function renderLesson(root, id) {
         break;
       }
     }
-    if (node) target.appendChild(node);
+    if (node) col.appendChild(node);
   });
 
   // footer
@@ -287,13 +282,12 @@ export function renderLesson(root, id) {
       { href: "#" + LESSONS[i + 1].id }));
 
   /* ── after the chapter ──────────────────────────────────────────────────
-     The apply surface and the footer nav sit outside the reading column, as
-     plain blocks beneath it, so both can have the full width honestly.
+     The footer nav sits outside the reading column, as a plain block beneath
+     it, so it can have the full width honestly.
 
      Order matters too: read the chapter, fly it, then leave. The footer nav used
      to sit above the playground inside the reading column, which put "next chapter"
      before the thing the chapter was building toward. */
-  const apply = el("div", "apply");
   const after = el("div", "after");
 
   /* ── what this chapter still wants ──
@@ -327,15 +321,17 @@ export function renderLesson(root, id) {
       stepsBox.appendChild(row);
     });
   }
-  /* Two of the three steps are marked from inside a modal that covers this page,
-     so the list cannot repaint itself on click - it listens for the store instead.
-     Chained onto whatever teardown the flow already set (the playground, if this
+  /* One of the three steps (the clip) is marked from inside a modal that covers
+     this page, so the list cannot repaint itself on click - it listens for the
+     store instead. A goal met inside a scene fires the same event from right on
+     this page, so the listener is still earning its keep either way.
+     Chained onto whatever teardown the flow already set (a scene, if this
      chapter has one) - it must not be the block that stops its setInterval. */
   document.addEventListener("bt:progress", paintSteps);
   { const prev = teardown; teardown = () => { document.removeEventListener("bt:progress", paintSteps); prev?.(); }; }
 
   if (steps.length) { paintSteps(); after.appendChild(stepsBox); }
-  after.append(apply, foot);
+  after.append(foot);
   wrap.append(head, col);
   root.append(wrap, after);
 
