@@ -708,7 +708,7 @@ button { font: inherit; color: inherit; }
 .node.st-ok rect, .node.st-ok ellipse, .node.st-ok polygon { stroke: var(--s-ok); fill: color-mix(in srgb, var(--s-ok) 22%, var(--paper)); }
 .node.st-fail rect, .node.st-fail ellipse, .node.st-fail polygon { stroke: var(--s-fail); fill: color-mix(in srgb, var(--s-fail) 22%, var(--paper)); }
 .node.st-run rect, .node.st-run ellipse, .node.st-run polygon { stroke: var(--s-run); fill: color-mix(in srgb, var(--s-run) 26%, var(--paper)); }
-.node.dirty ellipse { fill: url(#hatch); } .tree-live .node.dirty ellipse { fill: url(#hatch-live); }
+.node.dirty ellipse { fill: url(#hatch); } .tree-live .node.dirty ellipse { fill: var(--hatch-live, url(#hatch-live)); }
 .hatch { stroke: var(--s-fail); stroke-width: 1; }
 .edge { stroke: var(--ink-3); stroke-width: var(--w-rule); }
 .pulse { fill: var(--s-tick); }
@@ -880,14 +880,17 @@ button { font: inherit; color: inherit; }
 .tree-live .node.picked rect, .tree-live .node.picked ellipse, .tree-live .node.picked polygon { stroke-width: 2.5; }
 /* The walk: each edge the tick crossed draws itself once, in order. The
    dash is the tick pulse colour, because a pulse is the tick, not an answer. */
-.tree-live line.pulse { stroke: var(--s-tick); stroke-width: 2; stroke-dasharray: 60; stroke-dashoffset: 60;
+.tree-live line.pulse { stroke: var(--s-tick); stroke-width: 2; stroke-dasharray: var(--len); stroke-dashoffset: var(--len);
   animation: gv-walk 260ms linear forwards; }
 @keyframes gv-walk { to { stroke-dashoffset: 0; } }
-/* The halt: a node that was Running last tick and was not asked this tick. */
-.tree-live .node.halt rect, .tree-live .node.halt ellipse { animation: gv-halt 480ms ease-out 1; }
-@keyframes gv-halt { 0% { stroke: var(--s-fail); stroke-width: 3; } 100% { stroke-width: 1; } }
+/* The halt: a node that was Running last tick and was not asked this tick.
+   Ink, not a status colour - colour is the answer, and a halt is not one. The
+   keyframe ends at the base line weight so there is no jump when it hands
+   back to the plain .node rule. */
+.tree-live .node.halt rect, .tree-live .node.halt ellipse, .tree-live .node.halt polygon { animation: gv-halt 480ms ease-out 1; }
+@keyframes gv-halt { 0% { stroke: var(--ink); stroke-width: 3; } 100% { stroke: var(--ink); stroke-width: var(--w-line); } }
 @media (prefers-reduced-motion: reduce) {
-  .tree-live line.pulse, .tree-live .node.halt rect, .tree-live .node.halt ellipse { animation: none; }
+  .tree-live line.pulse, .tree-live .node.halt rect, .tree-live .node.halt ellipse, .tree-live .node.halt polygon { animation: none; }
 }
 
 .fact { border-left: var(--w-line) solid var(--ink); padding-left: 12px; color: var(--ink-2); }

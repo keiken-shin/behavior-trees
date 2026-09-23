@@ -11,8 +11,10 @@ import { walkOrder } from "../bt/run.js";
 const ST = { Success: "ok", Failure: "fail", Running: "run" };
 const OPTS = { nodeW: 104, nodeH: 34, hGap: 8, vGap: 44 };
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
+let seq = 0;   // a fresh hatch pattern id per view, so two scenes on one page never share a DOM id
 
 export function graphView(host) {
+  const hatchId = `gv-hatch-${seq++}`;
   host.innerHTML =
     `<div class="gv">` +
       `<div class="gv__stage"></div>` +
@@ -25,8 +27,8 @@ export function graphView(host) {
     `</div>`;
   const q = (s) => host.querySelector(s);
   const stage = q(".gv__stage"), card = q(".gv__card");
-  let svg = null, byId = new Map(), edgeTo = new Map(), base = null, vb = null;
-  let bt = null, lastEntry = null, picked = null, prevRunning = new Set();
+  let svg = null, byId = new Map(), edgeTo = new Map(), base = null, vb = null, ac = null;
+  let bt = null, lastEntry = null, lastReplay = false, picked = null, prevRunning = new Set();
 
   const setVB = () => svg && svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
   const zoom = (k, cx, cy) => {
@@ -37,25 +39,48 @@ export function graphView(host) {
     vb = { x: cx - fx * w, y: cy - fy * h, w, h };
     setVB();
   };
-  const toVB = (ev) => {
-    const r = svg.getBoundingClientRect();
-    return [vb.x + ((ev.clientX - r.left) / r.width) * vb.w, vb.y + ((ev.clientY - r.top) / r.height) * vb.h];
+  /* A client point (pixels) to viewBox units, through the svg's real screen
+     transform. `vb.w / rect.width` is only right when the box has the
+     viewBox's own aspect; `max-height` letterboxes a tall tree, and the CTM is
+     the one mapping that already knows it. */
+  const toUser = (ev) => {
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const p = new DOMPoint(ev.clientX, ev.clientY).matrixTransform(ctm.inverse());
+    return { x: p.x, y: p.y };
   };
 
   function bind() {
+    /* One controller per render: aborting it drops every listener below at
+       once, on the next render and on destroy(), rather than trusting that a
+       detached svg is quietly garbage collected. */
+    ac?.abort();
+    ac = new AbortController();
+    const { signal } = ac;
     let drag = null;
-    svg.addEventListener("pointerdown", (ev) => { drag = { x: ev.clientX, y: ev.clientY, vx: vb.x, vy: vb.y }; svg.setPointerCapture(ev.pointerId); });
+    svg.addEventListener("pointerdown", (ev) => {
+      /* The id under the pointer, read now: setPointerCapture below retargets
+         the matching pointerup to the svg itself, so ev.target there is
+         useless for finding the node that was clicked. */
+      drag = { x: ev.clientX, y: ev.clientY, last: toUser(ev), id: ev.target.closest("g[data-id]")?.dataset.id ?? null };
+      svg.setPointerCapture(ev.pointerId);
+    }, { signal });
     svg.addEventListener("pointermove", (ev) => {
       if (!drag) return;
-      const r = svg.getBoundingClientRect();
-      vb.x = drag.vx - ((ev.clientX - drag.x) / r.width) * vb.w;
-      vb.y = drag.vy - ((ev.clientY - drag.y) / r.height) * vb.h;
+      const p = toUser(ev);
+      vb.x -= p.x - drag.last.x; vb.y -= p.y - drag.last.y;
       setVB();
-    });
-    const up = (ev) => { if (drag && Math.hypot(ev.clientX - drag.x, ev.clientY - drag.y) < 4) pick(ev.target.closest("g[data-id]")?.dataset.id ?? null); drag = null; };
-    svg.addEventListener("pointerup", up);
-    svg.addEventListener("pointercancel", () => { drag = null; });
-    svg.addEventListener("wheel", (ev) => { ev.preventDefault(); const [cx, cy] = toVB(ev); zoom(ev.deltaY > 0 ? 1.15 : 1 / 1.15, cx, cy); }, { passive: false });
+      drag.last = toUser(ev);   // re-map the same point through the viewBox just set, so the next move measures from here
+    }, { signal });
+    const up = (ev) => { if (drag && Math.hypot(ev.clientX - drag.x, ev.clientY - drag.y) < 4) pick(drag.id); drag = null; };
+    svg.addEventListener("pointerup", up, { signal });
+    svg.addEventListener("pointercancel", () => { drag = null; }, { signal });
+    svg.addEventListener("wheel", (ev) => {
+      if (!ev.ctrlKey && !ev.metaKey) return;   // a plain wheel scrolls the page; ctrl/meta (also a trackpad pinch) zooms
+      ev.preventDefault();
+      const p = toUser(ev);
+      zoom(ev.deltaY > 0 ? 1.15 : 1 / 1.15, p.x, p.y);
+    }, { passive: false, signal });
     q(".gv__fit").onclick = () => { vb = { ...base }; setVB(); };
     q(".gv__in").onclick = () => zoom(1 / 1.25, vb.x + vb.w / 2, vb.y + vb.h / 2);
     q(".gv__out").onclick = () => zoom(1.25, vb.x + vb.w / 2, vb.y + vb.h / 2);
@@ -70,6 +95,14 @@ export function graphView(host) {
     if (!picked || !bt) { card.hidden = true; return; }
     const n = bt.all.find((x) => x.id === picked);
     const e = lastEntry?.trace.find((x) => x.id === picked);
+    /* Memory only means something on a composite actually running in memory
+       or keep mode - a reactive Sequence restarts at child 1 every tick, so it
+       gets no row. A replayed entry is a stored trace with no tree snapshot of
+       its own, so it names the mode and nothing about where the live tree
+       (today's tree, not that tick's) happens to sit. */
+    const memory = n.mode === "memory" || n.mode === "keep"
+      ? ["memory", lastReplay || n.st?.idx == null ? `{${n.mode}}` : `resume at child ${n.st.idx + 1}`]
+      : null;
     const rows = [
       ["kind", n.kind + (n.mode ? ` {${n.mode}}` : "")],
       ["name", n.leaf ?? n.name ?? ""],
@@ -77,7 +110,7 @@ export function graphView(host) {
       ["answer", e ? e.status : "not asked this tick"],
       e?.dirty ? ["dirty", "changed the world while answering"] : null,
       e?.error ? ["error", e.error] : null,
-      n.children?.length && n.st?.idx != null ? ["memory", `resume at child ${n.st.idx + 1}`] : null,
+      memory,
     ].filter(Boolean);
     card.innerHTML = `<button type="button" class="gv__close" aria-label="close">x</button>` +
       `<dl>${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(String(v))}</dd>`).join("")}</dl>`;
@@ -87,12 +120,12 @@ export function graphView(host) {
 
   return {
     render(spec, built) {
-      bt = built; picked = null; prevRunning = new Set(); lastEntry = null;
+      bt = built; picked = null; prevRunning = new Set(); lastEntry = null; lastReplay = false;
       const L = layout(spec, OPTS);
       stage.innerHTML =
-        `<svg xmlns="http://www.w3.org/2000/svg" class="figure tree-live" role="img" aria-label="The tree, repainted every tick">` +
-        `<defs><pattern id="hatch-live" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" class="hatch"/></pattern></defs>` +
-        L.edges.map((e) => edge(e.x1, e.y1, e.x2, e.y2).replace("<line", `<line data-to="${e.to}"`)).join("") +
+        `<svg xmlns="http://www.w3.org/2000/svg" class="figure tree-live" role="img" aria-label="The tree, repainted every tick" style="--hatch-live:url(#${hatchId})">` +
+        `<defs><pattern id="${hatchId}" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" class="hatch"/></pattern></defs>` +
+        L.edges.map((e) => edge(e.x1, e.y1, e.x2, e.y2).replace("<line", `<line data-to="${e.to}" style="--len:${Math.hypot(e.x2 - e.x1, e.y2 - e.y1)}"`)).join("") +
         L.nodes.map((d) => node(d.kind, d.x, d.y, d.label, { w: d.w, h: d.h }).replace("<g class=", `<g data-id="${d.id}" class=`)).join("") +
         `</svg>`;
       svg = stage.firstElementChild;
@@ -103,8 +136,9 @@ export function graphView(host) {
       card.hidden = true;
     },
     /* One history entry. `prev` is the entry before it, for the halt flash;
-       when omitted the view uses what it painted last. */
-    paint(entry, prev) {
+       when omitted the view uses what it painted last. `replay` marks a
+       repaint from stored history rather than a live tick - see showCard(). */
+    paint(entry, prev, replay = false) {
       const before = prev ? new Set(prev.trace.filter((x) => x.status === "Running").map((x) => x.id)) : prevRunning;
       const seen = new Set(entry.trace.map((x) => x.id));
       for (const [id, g] of byId) {
@@ -127,14 +161,14 @@ export function graphView(host) {
         l.classList.add("pulse");
       });
       prevRunning = new Set(entry.trace.filter((x) => x.status === "Running").map((x) => x.id));
-      lastEntry = entry;
+      lastEntry = entry; lastReplay = replay;
       showCard();
     },
     replay(history, i) {
       if (!history[i]) return;
-      this.paint(history[i], history[i - 1] ?? { trace: [] });
+      this.paint(history[i], history[i - 1] ?? { trace: [] }, true);
     },
     fit() { if (base) { vb = { ...base }; setVB(); } },
-    destroy() { host.innerHTML = ""; svg = null; byId = new Map(); edgeTo = new Map(); },
+    destroy() { ac?.abort(); ac = null; host.innerHTML = ""; svg = null; byId = new Map(); edgeTo = new Map(); },
   };
 }
