@@ -3,7 +3,7 @@
    passes and a misconception tree that fails, and check-checkride.mjs runs both,
    because an exam item nobody can pass is worse than no item. */
 import { run } from "../bt/run.js";
-import { WORLDS } from "./plays.js";
+import { WORLDS } from "../world/index.js";
 
 const near = (s, p, r = 3) => Math.hypot(s.x - p.x, s.y - p.y) <= r;
 const home = (s) => near(s, s.home);

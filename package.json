@@ -8,7 +8,7 @@
     "dev": "vite --port 63601",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "node scripts/check-bt.mjs && node scripts/check-world.mjs && node scripts/check-figures.mjs && node scripts/check-content.mjs && node scripts/check-checkride.mjs",
+    "check": "node scripts/check-bt.mjs && node scripts/check-world.mjs && node scripts/check-figures.mjs && node scripts/check-content.mjs && node scripts/check-checkride.mjs && node scripts/check-scenes.mjs",
     "curate": "node scripts/yt.mjs curate",
     "verify:videos": "node scripts/yt.mjs verify",
     "videos": "node scripts/yt.mjs emit"

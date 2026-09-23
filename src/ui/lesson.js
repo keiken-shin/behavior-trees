@@ -4,7 +4,7 @@ import DIAGRAMS from "../data/diagrams.js";
 import { el, mark } from "./util.js";
 import { stepsFor, doneSteps, markStep } from "./steps.js";
 import { openPlayer, closePlayer } from "./player.js";
-import { PLAYS } from "../data/plays.js";
+import { SCENES } from "../data/scenes.js";
 import SOURCE_FILE from "../../content/sources.json";
 import { mountPlayground } from "../play/playground.js";
 
@@ -191,21 +191,12 @@ export function renderLesson(root, id) {
             : "");
         break;
 
-      /* The playground, inline. No dialog: there is no engine to download and
-         the reader edits the tree while reading about it. */
-      case "play": {
-        const cfg = PLAYS[b.id];
-        if (!cfg) { console.error("play block with no configuration:", b.id); break; }
-        node = el("div", "play");
-        node.appendChild(el("div", "play__cap", `<span>Playground</span><span>Ch ${String(i + 1).padStart(2, "0")} · ${b.id}</span>`));
-        const host = el("div", "play__host");
-        node.appendChild(host);
-        const stop = mountPlayground(host, cfg, { onDone: () => markStep(les.id, "play") });
-        const prev = teardown;
-        teardown = () => { stop(); prev?.(); };
-        playNode = node;
+      /* The play block type is retired; scenes replace it (Task 4 rewrites this
+         case to render a scene). Left as a no-op so a stray "play" block does
+         not crash the build. */
+      case "play":
+        console.log("play block retired, ignored:", b.id);
         break;
-      }
 
       /* Points back into Part I. The chapter title is read from LESSONS rather
          than written here, so renaming a chapter cannot leave a link describing

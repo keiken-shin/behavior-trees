@@ -5,7 +5,7 @@
    and everything the playground needs comes off that object. */
 import { start, advance, switchCount } from "../bt/run.js";
 import { parse, format, ParseError } from "../bt/parse.js";
-import { WORLDS } from "../data/plays.js";
+import { WORLDS } from "../world/index.js";
 import { treeView } from "./tree-view.js";
 import { el } from "../ui/util.js";
 

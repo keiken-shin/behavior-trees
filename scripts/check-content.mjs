@@ -11,7 +11,7 @@
 
 import { LESSONS, PARTS } from "../src/data/lessons.js";
 import { VIDEOS } from "../src/data/videos.js";
-import { PLAYS } from "../src/data/plays.js";
+import { SCENES } from "../src/data/scenes.js";
 import { buildDeck } from "../src/data/deck.js";
 import { readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
@@ -88,14 +88,14 @@ missingFigs.length
   ? fail(`figures referenced but not built: ${missingFigs.join(", ")}`)
   : pass(`all ${Object.keys(DIAGRAMS).length} figure builders resolve`);
 
-/* ── every play block resolves, and every chapter has one ────────────────── */
+/* ── every scene block resolves, and every chapter has one ───────────────── */
 const badPlays = [];
 for (const les of LESSONS)
-  for (const b of les.flow.filter((x) => x.t === "play"))
-    if (!PLAYS[b.id]) badPlays.push(`${les.id} → ${b.id}`);
+  for (const b of les.flow.filter((x) => x.t === "scene"))
+    if (!SCENES[b.id]) badPlays.push(`${les.id} → ${b.id}`);
 badPlays.length
-  ? fail(`play blocks with no configuration in plays.js: ${badPlays.join(", ")}`)
-  : pass(`all ${Object.keys(PLAYS).length} playgrounds resolve`);
+  ? fail(`scene blocks with no configuration in scenes.js: ${badPlays.join(", ")}`)
+  : pass(`all ${Object.keys(SCENES).length} playgrounds resolve`);
 
 /* ── the appendix must never become homework ─────────────────────────────── */
 const deck = buildDeck();

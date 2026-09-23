@@ -14,7 +14,7 @@
 
 import { LESSONS } from "../data/lessons.js";
 import { VIDEOS } from "../data/videos.js";
-import { PLAYS } from "../data/plays.js";
+import { SCENES } from "../data/scenes.js";
 import { progress, saveProgress } from "./util.js";
 
 /* Labels state the rule exactly, including the strict part. "Watch a clip"
@@ -31,7 +31,7 @@ export function stepsFor(id) {
   const keys = [];
   if ((VIDEOS[id] || []).length) keys.push("video");
   if (les?.flow.some((b) => b.t === "check")) keys.push("check");
-  if (les?.flow.some((b) => b.t === "play" && PLAYS[b.id]?.goal)) keys.push("play");
+  if (les?.flow.some((b) => b.t === "scene" && SCENES[b.id]?.then?.goal)) keys.push("play");
   return keys.map((key) => ({ key, ...STEPS[key] }));
 }
 
