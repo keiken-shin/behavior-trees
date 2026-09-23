@@ -907,7 +907,7 @@ button { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) { .pg__tree svg * { transition: none; } }
 
 /* ── a scene's story ────────────────────────────────────────────────────── */
-.pg--story .pg__bar, .pg--story .pg__switches, .pg--story .pg__hazards, .pg--story .pg__edit, .pg--story .pg__goal { display: none; }
+.pg--story .pg__brief, .pg--story .pg__bar, .pg--story .pg__switches, .pg--story .pg__hazards, .pg--story .pg__edit, .pg--story .pg__goal { display: none; }
 .pg__story { margin-top: 12px; }
 .pg__steps { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .pg__stepbtn[data-at="done"] { background: var(--ink); color: var(--paper); }

@@ -129,7 +129,11 @@ export function graphView(host) {
         L.nodes.map((d) => node(d.kind, d.x, d.y, d.label, { w: d.w, h: d.h }).replace("<g class=", `<g data-id="${d.id}" class=`)).join("") +
         `</svg>`;
       svg = stage.firstElementChild;
-      base = { x: 0, y: 0, w: L.w, h: L.h }; vb = { ...base }; setVB();
+      /* A tree narrower than its own pane renders at its own size, not
+         stretched to fill the pane - the checkride's smallest trees would
+         otherwise balloon to the height of a thirteen-node one. */
+      const w = Math.max(L.w, stage.clientWidth || 0);
+      base = { x: 0, y: 0, w, h: L.h }; vb = { ...base }; setVB();
       byId = new Map([...svg.querySelectorAll("g[data-id]")].map((g) => [g.dataset.id, g]));
       edgeTo = new Map([...svg.querySelectorAll("line[data-to]")].map((l) => [l.dataset.to, l]));
       bind();
