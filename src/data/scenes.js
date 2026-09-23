@@ -210,7 +210,7 @@ SCENES["parallel/race"] = {
       tick: (s, bb, [v], node) => { bb.set("mode", v, node.id); return "Success"; } },
   },
   steps: [
-    { say: "Both children wrote the key mode this tick. Read the log on the right: the last writer won.", to: 1 },
+    { say: "Both children wrote the key mode this tick. Read the log under the map: the last writer won.", to: 1 },
     { say: "Three ticks, six writes, and slow wins every time, because it is ticked second. That is a race.", to: 3 },
   ],
   then: { hazards: [], brief: "Play it. Nothing changes, which is the point: order decides, not intent.",

@@ -119,7 +119,7 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
     const v = W.view(sim.state);
     q(".pg__bb").innerHTML = Object.entries(v).map(([k, x]) => `<span class="pg__kv"><b>${esc(k)}</b> ${esc(x)}</span>`).join(" ");
     q(".pg__log").textContent = sim.bb.log.length
-      ? "writes this tick: " + sim.bb.log.map((w) => `${w.node} ${w.key} ${w.from ?? "-"} > ${w.to}`).join(", ")
+      ? "writes this tick: " + sim.bb.log.map((w) => `${w.node} ${w.key} ${w.from == null ? "" : w.from + " > "}${w.to}`).join(", ")
       : "";
   }
   /* The scrubber replays stored entries into the graph and the tick readout.
