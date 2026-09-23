@@ -2,7 +2,8 @@
    `cfg.steps` the playground first tells a story: each step runs the sim to
    its moment at 20 ticks a second (or at once, with skip), stops, and shows
    its caption. After the last step the controls unlock: Step, Play, rate,
-   Reset, hazards, variants, modes, the editor, the goal. Without steps it is
+   Reset (the current tree again from tick 0, still unlocked), hazards,
+   variants, modes, the editor, the goal. Without steps it is
    unlocked from the start, which is what the checkride uses.
 
    Nothing here knows it is a drone: `cfg.world` names a WORLDS entry and
@@ -34,9 +35,13 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   let story = steps.length > 0;     // locked until the last step has run
   let stepState = null;             // { rawTick, cap, finish } while a story step's own interval is live
 
+  /* A scene's brief sits under its step strip, so the brief appearing at
+     unlock moves nothing above the graph. The checkride's playground has no
+     steps, and its brief is the task, so there it leads. */
+  const brief = cfg.brief ? `<p class="pg__brief">${cfg.brief}</p>` : "";
   host.innerHTML =
     `<div class="pg${story ? " pg--story" : ""}">` +
-      (cfg.brief ? `<p class="pg__brief">${cfg.brief}</p>` : "") +
+      (steps.length ? "" : brief) +
       /* The map gets the whole world pane - putting the board beside it (round
          2) squeezed the map to a fifth of the scene's own width, too narrow to
          read. The board is a slim strip below both panes instead: the readout
@@ -45,20 +50,20 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
          the blackboard chapter's steps read it. */
       `<div class="pg__panes"><div class="pg__tree"></div><div class="pg__world"></div></div>` +
       `<div class="pg__board"><p class="pg__bb"></p><p class="pg__log"></p></div>` +
-      `<label class="pg__scrub">trace at tick <b>0</b> <input type="range" min="0" max="0" value="0" aria-label="trace at tick"></label>` +
-      (steps.length ? `<div class="pg__story"><div class="pg__steps"></div><p class="pg__say"></p></div>` : "") +
+      `<label class="pg__scrub">trace at tick <b>0</b> <input type="range" name="trace" min="0" max="0" value="0" aria-label="trace at tick"></label>` +
+      (steps.length ? `<div class="pg__story"><div class="pg__steps"></div><p class="pg__say" aria-live="polite"></p></div>` + brief : "") +
       `<div class="pg__bar">` +
         `<button class="pg__step" type="button">Step</button>` +
         `<button class="pg__play" type="button">Play</button>` +
         `<button class="pg__reset" type="button">Reset</button>` +
-        `<label class="pg__rate">rate <input type="range" min="0" max="${RATES.length - 1}" value="3"><b>10</b> ticks/s</label>` +
+        `<label class="pg__rate">rate <input type="range" name="rate" min="0" max="${RATES.length - 1}" value="3"><b>10</b> ticks/s</label>` +
         `<span class="pg__tick">tick <b>0</b> · root <i>Idle</i></span>` +
         (cfg.counter ? `<span class="pg__count">switches <b>0</b></span>` : "") +
       `</div>` +
       `<div class="pg__switches"></div>` +
       `<div class="pg__hazards"></div>` +
       `<div class="pg__goal" hidden></div>` +
-      (cfg.editor ? `<div class="pg__edit"><textarea spellcheck="false" rows="12"></textarea><p class="pg__err" hidden></p><button type="button" class="pg__apply">Apply tree</button></div>` : "") +
+      (cfg.editor ? `<div class="pg__edit"><textarea name="tree" spellcheck="false" rows="12"></textarea><p class="pg__err" hidden></p><button type="button" class="pg__apply">Apply tree</button></div>` : "") +
     `</div>`;
   const q = (s) => host.querySelector(s);
   const pg = q(".pg");
@@ -79,6 +84,13 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
     paintWorld(null);
     paintScrub();
     paintStory();
+  }
+  /* Boot the current tree unlocked: the reader's own run, from tick 0. Reset,
+     a variant, a mode and an applied edit all land here; the story was told on
+     the scene's own tree and is re-told only from a step button. */
+  function bootFree() {
+    boot();
+    story = false; pg.classList.remove("pg--story"); at = steps.length; paintStory();
   }
   function showErr(e) {
     const p = q(".pg__err"); if (!p) { if (e) console.error(e); return; }
@@ -143,7 +155,7 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
 
   /* Back to the scene's own tree: the story it is about to (re)tell is the
      one the build proved for cfg.tree, not for whatever variant, mode or
-     edit the reader last chose. Reset and any step button call this before
+     edit the reader last chose. Every step button calls this before
      rebooting, so the reader can never watch a step's real caption land on a
      tree that never earned it. */
   function resetToScene() {
@@ -155,27 +167,34 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   }
 
   /* ── the story ── */
+  /* The strip is built once and repainted in place, so the button a keyboard
+     reader pressed keeps focus from step to step. */
+  const stepBtns = steps.map((s, i) => {
+    const b = el("button", "pg__stepbtn", String(i + 1)); b.type = "button";
+    b.setAttribute("aria-label", `step ${i + 1} of ${steps.length}`);
+    /* The step now animating is finished where it is, never started again:
+       a second runStep would apply its hazard a second time (see finishNow). */
+    b.onclick = () => { if (!sim) return; if (i === at && finishNow()) return; runTo(i, i <= at); };
+    return b;
+  });
+  const next = el("button", "pg__next", "Start"); next.type = "button";
+  /* Next is ignored while a step is already animating, so an accidental
+     double click cannot cut a walk the reader asked to watch short;
+     skip is the one way to do that (see finishNow). */
+  next.onclick = () => { if (!sim || stepState) return; runTo(at, false); };
+  const skip = el("button", "pg__skip", "skip"); skip.type = "button";
+  skip.onclick = () => { if (!sim) return; if (finishNow()) return; runTo(at, true); };
+  if (steps.length) q(".pg__steps").append(...stepBtns, next, skip);
   function paintStory() {
     if (!steps.length) return;
-    const box = q(".pg__steps"); box.innerHTML = "";
-    steps.forEach((s, i) => {
-      const b = el("button", "pg__stepbtn", String(i + 1)); b.type = "button";
-      b.dataset.at = i < at ? "done" : i === at ? "now" : "todo";
-      b.setAttribute("aria-label", `step ${i + 1} of ${steps.length}`);
-      b.onclick = () => { if (!sim) return; runTo(i, i <= at); };
-      box.appendChild(b);
-    });
-    if (at < steps.length) {
-      const next = el("button", "pg__next", at === 0 ? "Start" : "Next"); next.type = "button";
-      /* Next is ignored while a step is already animating, so an accidental
-         double click cannot cut a walk the reader asked to watch short;
-         skip is the one way to do that (see finishNow). */
-      next.onclick = () => { if (!sim || stepState) return; runTo(at, false); };
-      const skip = el("button", "pg__skip", "skip"); skip.type = "button";
-      skip.onclick = () => { if (!sim) return; if (finishNow()) return; runTo(at, true); };
-      box.append(next, skip);
-    }
-    q(".pg__say").textContent = at === 0 ? "" : q(".pg__say").textContent;
+    stepBtns.forEach((b, i) => { b.dataset.at = i < at ? "done" : i === at ? "now" : "todo"; });
+    next.textContent = at === 0 ? "Start" : "Next";
+    /* Next and skip go once the story is told. Focus on either moves to the
+       free Step button the unlock just showed, not to the page. */
+    const told = at === steps.length, held = document.activeElement === next || document.activeElement === skip;
+    next.hidden = skip.hidden = told;
+    if (told && held) q(".pg__step").focus();
+    if (at === 0) q(".pg__say").textContent = "";
   }
   /* Run step i on the scene's own tree. i === at (Next or skip on the step
      already loaded) just continues the live sim; any other i - forward or
@@ -260,7 +279,9 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   }
   q(".pg__step").onclick = () => { if (!sim) return; stop(); oneTick(); };
   q(".pg__play").onclick = () => (timer ? stop() : play());
-  q(".pg__reset").onclick = () => { if (!sim) return; resetToScene(); boot(); };
+  /* Reset starts the tree the reader has now (variant, mode or edit) again at
+     tick 0 and stays unlocked. Re-telling the story is the step 1 button. */
+  q(".pg__reset").onclick = () => { if (!sim) return; bootFree(); };
   q(".pg__rate input").oninput = (e) => { rate = RATES[e.target.value]; q(".pg__rate b").textContent = String(rate); if (timer) { stop(); play(); } };
 
   /* variants and the mode toggle */
@@ -278,21 +299,25 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
          controls, and it could read "memory" over a tree that is reactive. */
       const sel = q(".pg__mode select");
       if (sel) sel.value = parse(text, leaves).mode ?? "reactive";
-      boot();
-      /* A variant is the reader's own choice, so it opens unlocked: the story was
-         told on the scene's own tree. */
-      story = false; pg.classList.remove("pg--story"); at = steps.length; paintStory();
+      bootFree();
     };
     sw.appendChild(b);
   });
   if (cfg.modes) {
-    const lab = el("label", "pg__mode", `root mode <select><option>reactive</option><option>memory</option><option>keep</option></select>`);
+    const lab = el("label", "pg__mode", `root mode <select name="mode"><option>reactive</option><option>memory</option><option>keep</option></select>`);
     const sel = lab.querySelector("select");
     sel.value = parse(text, leaves).mode ?? "reactive";
     sel.onchange = (e) => {
       if (!sim) return;
       const spec = parse(text, leaves);
-      if (spec.kind === "Sequence" || spec.kind === "Fallback") { spec.mode = e.target.value; text = format(spec); if (q("textarea")) q("textarea").value = text; boot(); story = false; pg.classList.remove("pg--story"); at = steps.length; paintStory(); }
+      if (spec.kind !== "Sequence" && spec.kind !== "Fallback") return;
+      /* Reactive is the default and is written as no mode at all, as the
+         variants write it, so the comparison below can find the match. */
+      spec.mode = e.target.value === "reactive" ? undefined : e.target.value; text = format(spec);
+      if (q("textarea")) q("textarea").value = text;
+      /* The highlighted variant has to be the tree now running, or none. */
+      sw.querySelectorAll(".pg__var").forEach((x, i) => x.classList.toggle("on", format(parse(cfg.variants[i].tree, leaves)) === text));
+      bootFree();
     };
     sw.appendChild(lab);
   }
@@ -309,7 +334,7 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
     q("textarea").value = text;
     q(".pg__apply").onclick = () => {
       if (!sim) return;
-      try { parse(q("textarea").value, leaves); text = q("textarea").value; boot(); story = false; pg.classList.remove("pg--story"); at = steps.length; paintStory(); }
+      try { parse(q("textarea").value, leaves); text = q("textarea").value; bootFree(); }
       catch (e) { showErr(e instanceof ParseError ? e : new Error(e.message)); }
     };
   }

@@ -3,10 +3,11 @@
    as a class, edges pulse in the order the tick walked, a node that was Running
    and is not visited flashes once (the halt), so does a node the trace marks
    halted inside the tick (a Timeout giving up), and a click opens a card that
-   reads from the trace and the built tree, nothing else. Pan by drag, zoom by
-   ctrl+wheel or meta+wheel (also a trackpad pinch) or the buttons, fit to see
-   the whole tree. The tree never starts smaller than reading size: when the
-   whole of it would put a label under about 9 px, the view starts on the root
+   reads from the trace and the built tree, nothing else (Tab and Enter open
+   it too). Pan by drag, zoom by ctrl+wheel or meta+wheel (also a trackpad
+   pinch) or the buttons, fit to see the whole tree. The tree never starts
+   smaller than reading size: when the whole of it would put a label under
+   about 9 px, the view starts on the root
    at that size, the edges fade where the tree goes on, and every paint pans to
    the nodes that tick changed if they are out of view. */
 import { layout } from "../bt/layout.js";
@@ -150,6 +151,18 @@ export function graphView(host) {
       const p = toUser(ev);
       zoom(ev.deltaY > 0 ? 1.15 : 1 / 1.15, p.x, p.y);
     }, { passive: false, signal });
+    /* The keyboard's way to a node: Tab reaches it (and pans it into view),
+       Enter or Space opens its card, as a click does. */
+    svg.addEventListener("keydown", (ev) => {
+      const id = ev.target.closest?.("g[data-id]")?.dataset.id;
+      if (!id || (ev.key !== "Enter" && ev.key !== " ")) return;
+      ev.preventDefault();
+      pick(id);
+    }, { signal });
+    svg.addEventListener("focusin", (ev) => {
+      const id = ev.target.closest?.("g[data-id]")?.dataset.id;
+      if (id) follow([id], false);
+    }, { signal });
     q(".gv__fit").onclick = fitAll;
     q(".gv__in").onclick = () => zoom(1 / 1.25, vb.x + vb.w / 2, vb.y + vb.h / 2);
     q(".gv__out").onclick = () => zoom(1.25, vb.x + vb.w / 2, vb.y + vb.h / 2);
@@ -193,10 +206,10 @@ export function graphView(host) {
       bt = built; picked = null; lastEntry = null; lastReplay = false;
       const L = layout(spec, OPTS);
       stage.innerHTML =
-        `<svg xmlns="http://www.w3.org/2000/svg" class="figure tree-live" role="img" aria-label="The tree, repainted every tick" style="--hatch-live:url(#${hatchId})">` +
+        `<svg xmlns="http://www.w3.org/2000/svg" class="figure tree-live" role="group" aria-label="The tree, repainted every tick" style="--hatch-live:url(#${hatchId})">` +
         `<defs><pattern id="${hatchId}" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" class="hatch"/></pattern></defs>` +
         L.edges.map((e) => edge(e.x1, e.y1, e.x2, e.y2).replace("<line", `<line data-to="${e.to}" style="--len:${Math.hypot(e.x2 - e.x1, e.y2 - e.y1)}"`)).join("") +
-        L.nodes.map((d) => node(d.kind, d.x, d.y, d.label, { w: d.w, h: d.h }).replace("<g class=", `<g data-id="${d.id}" class=`)).join("") +
+        L.nodes.map((d) => node(d.kind, d.x, d.y, d.label, { w: d.w, h: d.h }).replace("<g class=", `<g data-id="${d.id}" tabindex="0" role="button" aria-label="${esc(`${d.label}, ${d.kind}`)}" class=`)).join("") +
         `</svg>`;
       svg = stage.firstElementChild;
       full = { x: 0, y: 0, w: L.w, h: L.h }; rootX = L.nodes[0].x;
