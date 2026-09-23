@@ -5,7 +5,8 @@
 import assert from "node:assert/strict";
 import { S } from "../src/bt/tree.js";
 import { DRONE, DT, SPEED, ARRIVE, DRAIN } from "../src/world/drone.js";
-import { run, walkOrder } from "../src/bt/run.js";
+import { run, walkOrder, haltedNow, advance } from "../src/bt/run.js";
+import { SCENES, runSteps } from "../src/data/scenes.js";
 
 let failed = 0, passed = 0;
 const t = (name, fn) => {
@@ -176,6 +177,18 @@ t("run: until() stops early and reports passed", () => {
 t("walkOrder: the tick walks in pre-order, so visited ids sort by number", () => {
   const trace = [{ id: "n2" }, { id: "n1" }, { id: "n5" }, { id: "n4" }, { id: "n0" }];   // post-order, as tick() records
   assert.deepEqual(walkOrder(trace), ["n0", "n1", "n2", "n4", "n5"]);
+});
+
+/* Chapter 8's story ends on the tick the timeout halts ReturnHome (n10). That
+   tick flashes n10 once; the tick after halts nothing, though n10's last entry
+   still reads Running (with halted), because the interpreter already reset it. */
+t("haltedNow: a timeout's halt flashes on its own tick and not on the next", () => {
+  const { sim, stops } = runSteps(SCENES["decorators/kinds"]);
+  assert.equal(stops.at(-1).t, 365);
+  const h = sim.history;
+  assert.deepEqual(haltedNow(h[363].trace, h[364].trace), ["n10"], "tick 365");
+  advance(sim);
+  assert.deepEqual(haltedNow(h[364].trace, h[365].trace), [], "tick 366");
 });
 
 console.log(failed ? `\n${failed} world check(s) FAILED` : `\nworld: ${passed} checks pass`);

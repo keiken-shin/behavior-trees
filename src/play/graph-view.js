@@ -11,7 +11,7 @@
    the nodes that tick changed if they are out of view. */
 import { layout } from "../bt/layout.js";
 import { node, edge, esc } from "../data/svg.js";
-import { walkOrder } from "../bt/run.js";
+import { walkOrder, haltedNow } from "../bt/run.js";
 
 const ST = { Success: "ok", Failure: "fail", Running: "run" };
 const OPTS = { nodeH: 34, hGap: 8, vGap: 44 };
@@ -35,7 +35,7 @@ export function graphView(host) {
   const stage = q(".gv__stage"), card = q(".gv__card");
   let svg = null, byId = new Map(), edgeTo = new Map(), base = null, vb = null, ac = null;
   let full = null, rootX = 0, paneW = 0, geo = new Map(), edgeL = 0, edgeR = 0;
-  let bt = null, lastEntry = null, lastReplay = false, picked = null, prevRunning = new Set();
+  let bt = null, lastEntry = null, lastReplay = false, picked = null;
 
   /* Every view change goes through here, so the edge fades always say whether
      the tree goes on past the left or the right edge of the pane. */
@@ -190,7 +190,7 @@ export function graphView(host) {
 
   return {
     render(spec, built) {
-      bt = built; picked = null; prevRunning = new Set(); lastEntry = null; lastReplay = false;
+      bt = built; picked = null; lastEntry = null; lastReplay = false;
       const L = layout(spec, OPTS);
       stage.innerHTML =
         `<svg xmlns="http://www.w3.org/2000/svg" class="figure tree-live" role="img" aria-label="The tree, repainted every tick" style="--hatch-live:url(#${hatchId})">` +
@@ -210,23 +210,22 @@ export function graphView(host) {
       bind();
       card.hidden = true;
     },
-    /* One history entry. `prev` is the entry before it, for the halt flash;
-       when omitted the view uses what it painted last. `replay` marks a
+    /* One history entry. `prev` is the entry before it, for the halt flash
+       (haltedNow, in run.js); when omitted the view uses what it painted last. `replay` marks a
        repaint from stored history rather than a live tick - see showCard(). */
     paint(entry, prev, replay = false) {
-      const before = prev ? new Set(prev.trace.filter((x) => x.status === "Running").map((x) => x.id)) : prevRunning;
-      const seen = new Set(entry.trace.map((x) => x.id));
+      const before = prev ?? lastEntry ?? { trace: [] };
+      const halted = haltedNow(before.trace, entry.trace);
       for (const [id, g] of byId) {
         g.classList.remove("st-ok", "st-fail", "st-run", "dirty", "err", "halt");
         g.classList.add("st-idle");
         g.querySelector("title.err-t")?.remove();
-        if (before.has(id) && !seen.has(id) && !REDUCED.matches) g.classList.add("halt");
+        if (halted.includes(id) && !REDUCED.matches) g.classList.add("halt");
       }
       for (const x of entry.trace) {
         const g = byId.get(x.id); if (!g) continue;
         g.classList.remove("st-idle"); g.classList.add(`st-${ST[x.status] ?? "idle"}`);
         if (x.dirty) g.classList.add("dirty");
-        if (x.halted && !REDUCED.matches) g.classList.add("halt");   // answered Running, then halted in the same tick
         if (x.error) { g.classList.add("err"); g.insertAdjacentHTML("afterbegin", `<title class="err-t">${esc(x.error)}</title>`); }
       }
       edgeTo.forEach((l) => { l.classList.remove("pulse"); l.style.animationDelay = ""; });
@@ -242,12 +241,8 @@ export function graphView(host) {
          Running before and not asked now). A node that merely went unasked is
          not a change worth following - it would pull the view off the branch
          that is actually running. */
-      const was = new Map((prev ?? lastEntry ?? { trace: [] }).trace.map((x) => [x.id, x.status]));
-      follow([
-        ...entry.trace.filter((x) => x.halted || was.get(x.id) !== x.status).map((x) => x.id),
-        ...[...before].filter((id) => !seen.has(id)),
-      ]);
-      prevRunning = new Set(entry.trace.filter((x) => x.status === "Running").map((x) => x.id));
+      const was = new Map(before.trace.map((x) => [x.id, x.status]));
+      follow([...entry.trace.filter((x) => was.get(x.id) !== x.status).map((x) => x.id), ...halted]);
       lastEntry = entry; lastReplay = replay;
       showCard();
     },

@@ -50,6 +50,19 @@ export function switchCount(ticks, rootChildIds) {
 export const walkOrder = (trace) =>
   trace.map((e) => e.id).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)));
 
+/* The nodes a tick halted, which the graph flashes: every entry halted inside
+   this tick (a Timeout giving up), and every node Running the tick before and
+   not asked now (a preemption). A Running entry already halted inside its own
+   tick is not Running any more - the interpreter reset it then - so the next
+   tick not asking it halts nothing. */
+export function haltedNow(prevTrace, trace) {
+  const seen = new Set(trace.map((e) => e.id));
+  return [
+    ...trace.filter((e) => e.halted).map((e) => e.id),
+    ...prevTrace.filter((e) => e.status === "Running" && !e.halted && !seen.has(e.id)).map((e) => e.id),
+  ];
+}
+
 export function run({ world, scenario = "delivery", tree, script = [], ticks = 1000, until }) {
   const sim = start({ world, scenario, tree });
   const byTick = new Map();
