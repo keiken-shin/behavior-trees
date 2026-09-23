@@ -15,6 +15,7 @@ import { WORLDS } from "../world/index.js";
 import { stepDone, stepTick, fill } from "../data/scenes.js";
 import { graphView } from "./graph-view.js";
 import { el } from "../ui/util.js";
+import { esc } from "../data/svg.js";
 
 const RATES = [1, 2, 5, 10, 30, 60];   // ticks per second on the slider
 const STORY_RATE = 20;
@@ -36,15 +37,14 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   host.innerHTML =
     `<div class="pg${story ? " pg--story" : ""}">` +
       (cfg.brief ? `<p class="pg__brief">${cfg.brief}</p>` : "") +
-      /* The world pane holds the map and the blackboard readout side by side -
-         spec section 4 puts the readout on the right, with the map, not below
-         the whole stage. The board stays visible whether the story is locked
-         or not: the blackboard chapter's steps read it. */
-      `<div class="pg__panes"><div class="pg__tree"></div>` +
-        `<div class="pg__world"><div class="pg__map"></div>` +
-          `<div class="pg__board"><table class="pg__bb"></table><table class="pg__log"></table></div>` +
-        `</div>` +
-      `</div>` +
+      /* The map gets the whole world pane - putting the board beside it (round
+         2) squeezed the map to a fifth of the scene's own width, too narrow to
+         read. The board is a slim strip below both panes instead: the readout
+         as one line of key-value chips, the write log as one inline line, no
+         table. It stays visible whether the story is locked or not, because
+         the blackboard chapter's steps read it. */
+      `<div class="pg__panes"><div class="pg__tree"></div><div class="pg__world"></div></div>` +
+      `<div class="pg__board"><p class="pg__bb"></p><p class="pg__log"></p></div>` +
       `<label class="pg__scrub">trace at tick <b>0</b> <input type="range" min="0" max="0" value="0" aria-label="trace at tick"></label>` +
       (steps.length ? `<div class="pg__story"><div class="pg__steps"></div><p class="pg__say"></p></div>` : "") +
       `<div class="pg__bar">` +
@@ -113,13 +113,13 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
     }
   }
   function paintWorld(status) {
-    q(".pg__map").innerHTML = W.draw(sim.state);
+    q(".pg__world").innerHTML = W.draw(sim.state);
     q(".pg__tick b").textContent = String(sim.t);
     q(".pg__tick i").textContent = status ?? "Idle";
     const v = W.view(sim.state);
-    q(".pg__bb").innerHTML = Object.entries(v).map(([k, x]) => `<tr><th>${k}</th><td>${x}</td></tr>`).join("");
-    q(".pg__log").innerHTML = sim.bb.log.length
-      ? `<tr><th colspan="4">writes this tick</th></tr>` + sim.bb.log.map((w) => `<tr><td>${w.node}</td><td>${w.key}</td><td>${w.from ?? ""}</td><td>${w.to}</td></tr>`).join("")
+    q(".pg__bb").innerHTML = Object.entries(v).map(([k, x]) => `<span class="pg__kv"><b>${esc(k)}</b> ${esc(x)}</span>`).join(" ");
+    q(".pg__log").textContent = sim.bb.log.length
+      ? "writes this tick: " + sim.bb.log.map((w) => `${w.node} ${w.key} ${w.from ?? "-"} > ${w.to}`).join(", ")
       : "";
   }
   /* The scrubber replays stored entries into the graph and the tick readout.

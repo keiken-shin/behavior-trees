@@ -783,16 +783,17 @@ button { font: inherit; color: inherit; }
 .pg__tick, .pg__count { font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); margin-left: auto; }
 .pg__tick i { font-style: normal; color: var(--ink); }
 .pg__goal { margin-top: 12px; padding: 8px 10px; border: var(--w-rule) solid var(--s-ok); font-size: 14px; }
-/* The world pane: the map, then the blackboard readout and the write log -
-   small tables, not the drawing's subject - on the right of the same pane,
-   per spec section 4. The board stays visible whether a story is locked or
-   not, because the blackboard chapter's steps read it. */
-.pg__world { display: flex; gap: 10px; align-items: flex-start; }
-.pg__map { flex: 3 1 0; min-width: 0; }
-.pg__board { flex: 2 1 0; min-width: 0; display: grid; gap: 6px; }
-.pg__bb, .pg__log { font-family: var(--f-mono); font-size: 11px; border-collapse: collapse; width: 100%; }
-.pg__bb th, .pg__log th { text-align: left; color: var(--ink-3); font-weight: 500; padding: 2px 6px 2px 0; }
-.pg__bb td, .pg__log td { padding: 2px 6px 2px 0; border-top: var(--w-hair) solid var(--rule-soft); }
+.pg__world svg { width: 100%; height: auto; }
+/* A slim strip below both panes, not a pane of its own: the blackboard
+   readout as one line of key-value chips, the write log as one line under it.
+   Putting these beside the map (round 2) gave the map only 2/5 of the scene's
+   own width, too narrow to read; a strip the full width of both panes costs
+   far less height than a third column would, and stays visible whether the
+   story is locked or not, because the blackboard chapter's steps read it. */
+.pg__board { margin-top: 10px; font-family: var(--f-mono); font-size: 11px; color: var(--ink-2); }
+.pg__bb { margin: 0; display: flex; flex-wrap: wrap; gap: 3px 10px; }
+.pg__kv b { font-weight: 600; color: var(--ink); margin-right: 3px; }
+.pg__log { margin: 4px 0 0; color: var(--ink-3); }
 .pg__edit textarea { width: 100%; font-family: var(--f-mono); font-size: 13px; padding: 8px; margin-top: 12px;
   background: var(--paper-sunk); color: var(--ink); border: var(--w-hair) solid var(--rule); resize: vertical; }
 .pg__err { color: var(--s-fail); font-family: var(--f-mono); font-size: 12px; }
@@ -850,14 +851,6 @@ button { font: inherit; color: inherit; }
 .cite a:hover { color: var(--ink); border-bottom-color: var(--ink-3); }
 @media (max-width: 1020px) {
   .pg__panes { grid-template-columns: 1fr; }
-  /* The tables move under the map instead of beside it - there is no room
-     for both side by side once the panes themselves stack. `flex-start` was
-     right for the row layout, where the cross axis is vertical and a taller
-     map should not stretch the board's height. Stacked, the cross axis is
-     horizontal, and that same value left the board at its own content width,
-     stranded in the pane's left third with the tables cramped into it -
-     stretch so it takes the pane's full width instead. */
-  .pg__world { flex-direction: column; align-items: stretch; }
 }
 @media (prefers-reduced-motion: reduce) { .pg__tree svg * { transition: none; } }
 
@@ -881,18 +874,23 @@ button { font: inherit; color: inherit; }
 .scene { margin: 28px 0; border: var(--w-rule) solid var(--ink); }
 .scene__cap { display: flex; justify-content: space-between; padding: 6px 10px; border-bottom: var(--w-hair) solid var(--rule);
   font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-/* The story stage (caption, panes, scrubber and strip - the board now sits
-   inside the world pane, so it no longer adds a row of its own) has to fit
-   in 480px on a wide screen so a scene never fills it. A 400px pane cap left
-   the map and the graph at their full aspect-ratio height, which is what
-   blew the budget; a 120px cap made both illegible. This value is measured
-   (script, not by eye) against every story scene, at every step, at 1280,
-   1440 and 1920 - see the report for the table; the three widths give the
-   same numbers because the scene's own width no longer grows with the
-   window past 880px. */
+/* The story stage (caption, panes, scrubber, board strip and step strip) has
+   to fit in 480px on a wide screen so a scene never fills it. A 400px pane
+   cap left the map and the graph at their full aspect-ratio height, which is
+   what blew the budget; putting the board beside the map (round 2) left the
+   map too narrow to read, since the map is drawn from a fixed-ratio viewBox
+   and its width, not the 250px height cap, was the real limit at 2/5 of the
+   scene's width. The board strip below both panes costs far less height than
+   a third of a pane would, leaving the map the panes' full width. This value
+   is measured (script, not by eye) against every story scene, at every step,
+   at 1280, 1440 and 1920 - see the report for the table; the three widths
+   give the same numbers because the scene's own width no longer grows with
+   the window past 880px. */
 .scene .gv__stage svg { max-height: 250px; }
-.scene .pg__world svg { max-height: 250px; width: 100%; height: auto; }
+.scene .pg__world svg { max-height: 250px; }
 @media (max-width: 1020px) {
+  /* No inner scroll: the map's own svg is already capped at 300px here, so
+     nothing needs to hide behind a clipped, scrolling world pane on top of
+     that - a reader on a phone could not tell there was more below. */
   .scene .gv__stage svg, .scene .pg__world svg { max-height: 300px; }
-  .scene .pg__world { max-height: 300px; overflow-y: auto; }
 }
