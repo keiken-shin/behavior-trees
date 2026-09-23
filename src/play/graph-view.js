@@ -129,11 +129,15 @@ export function graphView(host) {
         L.nodes.map((d) => node(d.kind, d.x, d.y, d.label, { w: d.w, h: d.h }).replace("<g class=", `<g data-id="${d.id}" class=`)).join("") +
         `</svg>`;
       svg = stage.firstElementChild;
-      /* A tree narrower than its own pane renders at its own size, not
-         stretched to fill the pane - the checkride's smallest trees would
-         otherwise balloon to the height of a thirteen-node one. */
-      const w = Math.max(L.w, stage.clientWidth || 0);
-      base = { x: 0, y: 0, w, h: L.h }; vb = { ...base }; setVB();
+      /* A tree narrower than its own pane renders at its own size, centred,
+         not stretched to fill the pane - the checkride's smallest trees
+         would otherwise balloon to the height of a thirteen-node one. Capped
+         in CSS (max-width plus the stylesheet's auto margins) rather than by
+         measuring the stage here: a host mounted off the page - Task 4's
+         pattern - has a clientWidth of 0 at render() time, which a
+         measurement would wrongly treat as "no cap needed". */
+      svg.style.maxWidth = `${L.w}px`;
+      base = { x: 0, y: 0, w: L.w, h: L.h }; vb = { ...base }; setVB();
       byId = new Map([...svg.querySelectorAll("g[data-id]")].map((g) => [g.dataset.id, g]));
       edgeTo = new Map([...svg.querySelectorAll("line[data-to]")].map((l) => [l.dataset.to, l]));
       bind();

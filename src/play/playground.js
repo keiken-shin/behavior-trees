@@ -90,7 +90,11 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
      live sim rather than being handed a status to paint. */
   function paintAfterTick() {
     const last = sim.history[sim.history.length - 1];
-    view.paint({ t: last.t, status: last.status, trace: last.trace });
+    /* The halt flash is a diff against the tick before this one, not against
+       whatever graph-view last painted: since a skip paints only the tick it
+       lands on, that could be many ticks back and would flash (or miss) a
+       halt the interpreter never had, or missed one it did. */
+    view.paint({ t: last.t, status: last.status, trace: last.trace }, sim.history[sim.history.length - 2] ?? { trace: [] });
     lastStatus = last.status;
     if (cfg.counter) q(".pg__count b").textContent = String(switchCount(sim.history, sim.bt.root.children.map((c) => c.id)));
     paintWorld(last.status);
@@ -151,12 +155,15 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
       const b = el("button", "pg__stepbtn", String(i + 1)); b.type = "button";
       b.dataset.at = i < at ? "done" : i === at ? "now" : "todo";
       b.setAttribute("aria-label", `step ${i + 1} of ${steps.length}`);
-      b.onclick = () => { if (!sim) return; runTo(i, true); };
+      b.onclick = () => { if (!sim) return; runTo(i, i <= at); };
       box.appendChild(b);
     });
     if (at < steps.length) {
       const next = el("button", "pg__next", at === 0 ? "Start" : "Next"); next.type = "button";
-      next.onclick = () => { if (!sim) return; if (finishNow()) return; runTo(at, false); };
+      /* Next is ignored while a step is already animating, so an accidental
+         double click cannot cut a walk the reader asked to watch short;
+         skip is the one way to do that (see finishNow). */
+      next.onclick = () => { if (!sim || stepState) return; runTo(at, false); };
       const skip = el("button", "pg__skip", "skip"); skip.type = "button";
       skip.onclick = () => { if (!sim) return; if (finishNow()) return; runTo(at, true); };
       box.append(next, skip);
@@ -166,7 +173,11 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   /* Run step i on the scene's own tree. i === at (Next or skip on the step
      already loaded) just continues the live sim; any other i - forward or
      back - replays from tick 0 so every step before it runs in order, with
-     its hazard, rather than being skipped outright. */
+     its hazard, rather than being skipped outright. A step button passes
+     fast=true for i <= at (an already-told step, replayed at once - there is
+     nothing left to watch) and fast=false for i > at (a step ahead, which
+     the reader has not seen yet and so earns the same animation Next would
+     have given it); the steps before it still run fast either way. */
   function runTo(i, fast) {
     if (!sim) return;
     stop();
@@ -209,11 +220,13 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
       else if (sim.t >= cap) finish(false);
     }, 1000 / STORY_RATE);
   }
-  /* Next or skip pressed while a step is already animating must not start a
-     second runStep - that would hand it a fresh `first`, applying the step's
-     hazard a second time, and a fresh `cap` counted from now instead of from
-     the step's own start. Both drain the same running step's closure from
-     wherever it currently is instead: Next while animating acts as skip. */
+  /* Skip pressed while a step is already animating must not start a second
+     runStep - that would hand it a fresh `first`, applying the step's hazard
+     a second time, and a fresh `cap` counted from now instead of from the
+     step's own start. It drains the same running step's closure from
+     wherever it currently is instead. Next never reaches here while a step
+     animates (see next.onclick) - it is ignored instead, so a double click
+     on Next cannot cut the walk short by accident. */
   function finishNow() {
     if (!sim || !stepState) return false;
     const { rawTick, cap, finish } = stepState;

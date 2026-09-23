@@ -866,7 +866,13 @@ button { font: inherit; color: inherit; }
 
 /* ── the graph view ─────────────────────────────────────────────────────── */
 .gv { position: relative; }
-.gv__stage svg { display: block; width: 100%; height: auto; max-height: 400px; cursor: grab; touch-action: none; }
+/* A gutter the height of the floating tools, reserved above the tree: a
+   small tree capped at its native size and centred still puts its root
+   under the top-right corner otherwise - centring moves it right, and the
+   root box is wide enough at native scale to reach that corner regardless
+   of how narrow the pane is. */
+.gv__stage { padding-top: 36px; }
+.gv__stage svg { display: block; width: 100%; height: auto; max-height: 400px; margin: 0 auto; cursor: grab; touch-action: none; }
 .gv__stage svg:active { cursor: grabbing; }
 .gv__tools { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; }
 .gv__tools button { font-family: var(--f-mono); font-size: 11px; padding: 3px 7px; background: var(--paper); color: var(--ink);
