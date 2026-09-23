@@ -9,7 +9,7 @@ export function renderDialects(root) {
   root.innerHTML = "";
   const wrap = el("div", "cards");
   const head = el("div", "cards__head");
-  head.innerHTML = `<h1 class="t-display">Dialects</h1><p class="cards__lede">The same six ideas in five vocabularies. ` +
+  head.innerHTML = `<h1 class="t-display">Dialects</h1><p class="cards__lede">The same ${DIAL.rows.length} ideas in ${DIAL.columns.length} vocabularies. ` +
     `Every column names the document it was read from. Where a tool changes the meaning and not just the word, the cell says so.</p>`;
   wrap.appendChild(head);
   const t = el("table", "index dialects");
@@ -22,7 +22,9 @@ export function renderDialects(root) {
     tb.appendChild(tr);
   });
   t.appendChild(tb);
-  wrap.appendChild(t);
+  const scroll = el("div", "dial__wrap");
+  scroll.appendChild(t);
+  wrap.appendChild(scroll);
   const back = el("a", "cards__go", `${mark("left")}<span>Back to the index</span>`); back.href = "#";
   wrap.appendChild(back);
   root.appendChild(wrap);

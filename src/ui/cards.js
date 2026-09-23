@@ -51,9 +51,9 @@ export function renderCards(root) {
     const stat = el("div", "readout cards__stat");
     stat.innerHTML =
       `<div><span>Cards</span><b>${s.total}</b></div>` +
-      `<div class="v-drag"><span>Due now</span><b>${s.due}</b></div>` +
+      `<div><span>Due now</span><b>${s.due}</b></div>` +
       `<div><span>Seen</span><b>${s.seen}</b></div>` +
-      `<div class="v-thrust"><span>Mastered</span><b>${s.mastered}</b></div>`;
+      `<div><span>Mastered</span><b>${s.mastered}</b></div>`;
     body.appendChild(stat);
 
     const acts = el("div", "cards__acts");

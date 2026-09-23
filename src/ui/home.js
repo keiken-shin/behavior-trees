@@ -28,6 +28,12 @@ export function renderHome(root) {
        course lets a status colour mean "you did this". */
     lessons.forEach((les) => { if (chapterDone(les.id)) plate.querySelector(`a[href="#${les.id}"] g`)?.classList.add("st-ok"); });
     root.append(lede, plate);
+    /* Never below reading size (9 px labels, the graph view's rule): on a
+       phone the tree keeps that width and scrolls sideways, opened on its root;
+       the table below lists the same chapters. */
+    const svg = plate.querySelector("svg");
+    svg.style.minWidth = `${svg.viewBox.baseVal.width * 0.75}px`;
+    plate.scrollLeft = (plate.scrollWidth - plate.clientWidth) / 2;
 
     const table = el("table", "index");
     table.innerHTML = "<thead><tr><th>Item</th><th>Lesson</th><th>Remarks</th><th></th></tr></thead>";

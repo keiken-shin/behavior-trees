@@ -96,6 +96,10 @@ button { font: inherit; color: inherit; }
   padding: 10px 0 9px;
   background: var(--paper);
   border-bottom: var(--w-rule) solid var(--ink);
+  /* Paper one pixel past each side: the column's width is fractional on a
+     phone, and a bordered box scrolling under the bar showed its right edge
+     as a sliver of rule beside the bar. */
+  box-shadow: 1px 0 var(--paper), -1px 0 var(--paper);
 }
 .bar__title {
   display: inline-flex; align-items: center; gap: 9px; align-self: center;
@@ -164,7 +168,7 @@ button { font: inherit; color: inherit; }
 }
 .home__lede p { max-width: 46ch; color: var(--ink-2); margin: 0; }
 
-.home__plate { margin: 24px 0; }
+.home__plate { margin: 24px 0; overflow-x: auto; overscroll-behavior-x: contain; }
 .home__plate svg { width: 100%; height: auto; }
 .home__plate a { cursor: pointer; }
 .home__plate a:hover rect { stroke-width: 2.5; }
@@ -233,6 +237,19 @@ button { font: inherit; color: inherit; }
 .cards__lede { color: var(--ink-2); font-size: 19px; margin-top: .5em; }
 .cards__body { max-width: 72ch; }
 .cards__stat { margin-bottom: 22px; }
+/* The deck's four counts, one ruled cell each. Plain ink: a count is not an
+   answer, so it takes no status colour. Two by two on a phone. */
+.readout { display: grid; grid-template-columns: repeat(4, 1fr); border: var(--w-hair) solid var(--rule); }
+.readout div { padding: 8px 10px; border-right: var(--w-hair) solid var(--rule); min-width: 0; }
+.readout div:last-child { border-right: 0; }
+.readout span { display: block; font-family: var(--f-mono); font-size: 10px;
+                letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.readout b { display: block; font-family: var(--f-mono); font-size: 15px; font-weight: 500; margin-top: 2px; }
+@media (max-width: 620px) {
+  .readout { grid-template-columns: repeat(2, 1fr); }
+  .readout div:nth-child(2) { border-right: 0; }
+  .readout div:nth-child(n+3) { border-top: var(--w-hair) solid var(--rule); }
+}
 .cards__acts { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 34px; }
 .cards__h2 { margin-bottom: .3em; }
 .cards__note { color: var(--ink-2); font-size: 15px; margin-bottom: 16px; }
@@ -706,17 +723,22 @@ button { font: inherit; color: inherit; }
      number on some rows and sit beside it on others, and the header keeps column
      labels nothing lines up with any more. Each row becomes its own small grid
      instead, so the item column is exact on every row and the header goes. */
-  .index { display: block; margin-top: 22px; border-top: var(--w-rule) solid var(--ink); }
-  .index thead { display: none; }
-  .index tbody { display: block; }
-  .index tr { display: grid; grid-template-columns: 38px minmax(0, 1fr); column-gap: 10px;
+  .index:not(.dialects) { display: block; margin-top: 22px; border-top: var(--w-rule) solid var(--ink); }
+  .index:not(.dialects) thead { display: none; }
+  .index:not(.dialects) tbody { display: block; }
+  .index:not(.dialects) tr { display: grid; grid-template-columns: 38px minmax(0, 1fr); column-gap: 10px;
               padding: 11px 12px; border-bottom: var(--w-hair) solid var(--rule-soft); }
-  .index td { display: block; padding: 0; border: 0; }
-  .index .c-item { width: auto; grid-column: 1; grid-row: 1; }
-  .index tr td:nth-child(2) { grid-column: 2; grid-row: 1; }
-  .index .c-rem { grid-column: 2; grid-row: 2; margin-top: 4px; font-size: 14px; }
-  .index .c-st { grid-column: 2; grid-row: 3; width: auto; text-align: left; margin-top: 6px; }
-  .index .c-st:empty { display: none; }
+  .index:not(.dialects) td { display: block; padding: 0; border: 0; }
+  .index:not(.dialects) .c-item { width: auto; grid-column: 1; grid-row: 1; }
+  .index:not(.dialects) tr td:nth-child(2) { grid-column: 2; grid-row: 1; }
+  .index:not(.dialects) .c-rem { grid-column: 2; grid-row: 2; margin-top: 4px; font-size: 14px; }
+  .index:not(.dialects) .c-st { grid-column: 2; grid-row: 3; width: auto; text-align: left; margin-top: 6px; }
+  .index:not(.dialects) .c-st:empty { display: none; }
+  /* The dialect table is a real grid of six columns whose header carries each
+     column's source, so it is not flattened like the index: it keeps its
+     columns and scrolls sideways inside its own box. */
+  .dial__wrap { overflow-x: auto; overscroll-behavior-x: contain; }
+  .dialects { min-width: 760px; }
 }
 /* ── turning to another plate ──────────────────────────────────────────────
    A crossfade, and nothing else. The rails, the bar and the paper are identical
