@@ -356,9 +356,10 @@ button { font: inherit; color: inherit; }
 .col > *, .lesson__head > * { max-width: 68ch; }   /* body measure, per the craft floor */
 /* Breaks out past the text measure, up to a laptop's own width, and no
    further - spec section 2 caps it "about 880 px" so it never turns into the
-   full viewport on a wide monitor. Centred, not flush to the text's own left
-   edge, so the overhang reads as one deliberate wide plate. */
-.col > .scene, .col > .figure-inline { max-width: 880px; margin-left: auto; margin-right: auto; }
+   full viewport on a wide monitor. Flush with the text's own left edge, not
+   centred: the reading column is flush left, and a wide block centred in the
+   much wider `.col` box would share neither edge with the text it follows. */
+.col > .scene, .col > .figure-inline { max-width: 880px; }
 
 .lesson__title { margin-bottom: .5em; }
 .lesson__sub { color: var(--ink-2); font-size: 19px; max-width: 40ch; margin-bottom: 2.4em; }
@@ -782,7 +783,13 @@ button { font: inherit; color: inherit; }
 .pg__tick, .pg__count { font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); margin-left: auto; }
 .pg__tick i { font-style: normal; color: var(--ink); }
 .pg__goal { margin-top: 12px; padding: 8px 10px; border: var(--w-rule) solid var(--s-ok); font-size: 14px; }
-.pg__board { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+/* The world pane: the map, then the blackboard readout and the write log -
+   small tables, not the drawing's subject - on the right of the same pane,
+   per spec section 4. The board stays visible whether a story is locked or
+   not, because the blackboard chapter's steps read it. */
+.pg__world { display: flex; gap: 10px; align-items: flex-start; }
+.pg__map { flex: 3 1 0; min-width: 0; }
+.pg__board { flex: 2 1 0; min-width: 0; display: grid; gap: 6px; }
 .pg__bb, .pg__log { font-family: var(--f-mono); font-size: 11px; border-collapse: collapse; width: 100%; }
 .pg__bb th, .pg__log th { text-align: left; color: var(--ink-3); font-weight: 500; padding: 2px 6px 2px 0; }
 .pg__bb td, .pg__log td { padding: 2px 6px 2px 0; border-top: var(--w-hair) solid var(--rule-soft); }
@@ -793,12 +800,19 @@ button { font: inherit; color: inherit; }
 
 /* ── the graph view ─────────────────────────────────────────────────────── */
 .gv { position: relative; }
-/* A gutter the height of the floating tools, reserved above the tree: a
-   small tree capped at its native size and centred still puts its root
-   under the top-right corner otherwise - centring moves it right, and the
-   root box is wide enough at native scale to reach that corner regardless
-   of how narrow the pane is. */
-.gv__stage { padding-top: 36px; }
+/* The tools float over the pane's top-right corner - a reserved gutter the
+   full width of the pane cost real space a scene cannot spare. The root of a
+   small, centred tree sits top-centre and clears the corner at every width a
+   scene actually uses (checked by measurement: the widest gap closes to 30 px
+   at 1280). But the checkride lets a reader narrow the window and edit the
+   tree down to a single child, and measurement there found the two-node
+   starter's root overlapping the tools below about 410 px, growing to a 31 px
+   collision at 343. A small top padding on the stage - short enough that the
+   busiest scene (425 px without it) still clears 480 with room - pushes any
+   tree's root below the tools regardless of how narrow the window or how thin
+   the tree, which a width-keyed fix would not: the reader can make a tree
+   narrower than any breakpoint predicts. */
+.gv__stage { padding-top: 34px; }
 .gv__stage svg { display: block; width: 100%; height: auto; max-height: 400px; margin: 0 auto; cursor: grab; touch-action: none; }
 .gv__stage svg:active { cursor: grabbing; }
 .gv__tools { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; }
@@ -835,7 +849,15 @@ button { font: inherit; color: inherit; }
           color: var(--ink-3); text-decoration: none; border-bottom: var(--w-hair) solid var(--rule); }
 .cite a:hover { color: var(--ink); border-bottom-color: var(--ink-3); }
 @media (max-width: 1020px) {
-  .pg__panes, .pg__board { grid-template-columns: 1fr; }
+  .pg__panes { grid-template-columns: 1fr; }
+  /* The tables move under the map instead of beside it - there is no room
+     for both side by side once the panes themselves stack. `flex-start` was
+     right for the row layout, where the cross axis is vertical and a taller
+     map should not stretch the board's height. Stacked, the cross axis is
+     horizontal, and that same value left the board at its own content width,
+     stranded in the pane's left third with the tables cramped into it -
+     stretch so it takes the pane's full width instead. */
+  .pg__world { flex-direction: column; align-items: stretch; }
 }
 @media (prefers-reduced-motion: reduce) { .pg__tree svg * { transition: none; } }
 
@@ -847,7 +869,9 @@ button { font: inherit; color: inherit; }
 .pg__stepbtn[data-at="now"] { border-width: 2px; }
 .pg__next { margin-left: 6px; }
 .pg__skip { border-style: dashed; }
-.pg__say { margin: 10px 0 0; font-size: 15px; line-height: 1.5; min-height: 1.5em; }
+/* Reserves two lines, not one: a long caption that wraps to a second line
+   must not grow the story stage past what was budgeted for it. */
+.pg__say { margin: 10px 0 0; font-size: 15px; line-height: 1.5; min-height: 3em; }
 .pg__scrub { display: flex; align-items: center; gap: 8px; margin-top: 8px;
   font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
 .pg__scrub input { flex: 1; accent-color: var(--accent); }
@@ -857,15 +881,18 @@ button { font: inherit; color: inherit; }
 .scene { margin: 28px 0; border: var(--w-rule) solid var(--ink); }
 .scene__cap { display: flex; justify-content: space-between; padding: 6px 10px; border-bottom: var(--w-hair) solid var(--rule);
   font-family: var(--f-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-/* The story stage (caption, panes, scrubber, strip and the blackboard board
-   that is still showing, locked) has to fit in 480px on a wide screen so a
-   scene never fills it - the 880px width cap alone is not enough, because the
-   world map's own aspect ratio still fills whatever height that width gives
-   it. 120px measured (script, not by eye) at 480px total or under at 1280,
-   1440 and 1920 - the three widths give the same number because the scene's
-   own width no longer grows with the window past 880px. */
-.scene .gv__stage svg { max-height: 120px; }
-.scene .pg__world svg { max-height: 120px; width: 100%; height: auto; }
+/* The story stage (caption, panes, scrubber and strip - the board now sits
+   inside the world pane, so it no longer adds a row of its own) has to fit
+   in 480px on a wide screen so a scene never fills it. A 400px pane cap left
+   the map and the graph at their full aspect-ratio height, which is what
+   blew the budget; a 120px cap made both illegible. This value is measured
+   (script, not by eye) against every story scene, at every step, at 1280,
+   1440 and 1920 - see the report for the table; the three widths give the
+   same numbers because the scene's own width no longer grows with the
+   window past 880px. */
+.scene .gv__stage svg { max-height: 250px; }
+.scene .pg__world svg { max-height: 250px; width: 100%; height: auto; }
 @media (max-width: 1020px) {
   .scene .gv__stage svg, .scene .pg__world svg { max-height: 300px; }
+  .scene .pg__world { max-height: 300px; overflow-y: auto; }
 }

@@ -36,7 +36,15 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   host.innerHTML =
     `<div class="pg${story ? " pg--story" : ""}">` +
       (cfg.brief ? `<p class="pg__brief">${cfg.brief}</p>` : "") +
-      `<div class="pg__panes"><div class="pg__tree"></div><div class="pg__world"></div></div>` +
+      /* The world pane holds the map and the blackboard readout side by side -
+         spec section 4 puts the readout on the right, with the map, not below
+         the whole stage. The board stays visible whether the story is locked
+         or not: the blackboard chapter's steps read it. */
+      `<div class="pg__panes"><div class="pg__tree"></div>` +
+        `<div class="pg__world"><div class="pg__map"></div>` +
+          `<div class="pg__board"><table class="pg__bb"></table><table class="pg__log"></table></div>` +
+        `</div>` +
+      `</div>` +
       `<label class="pg__scrub">trace at tick <b>0</b> <input type="range" min="0" max="0" value="0" aria-label="trace at tick"></label>` +
       (steps.length ? `<div class="pg__story"><div class="pg__steps"></div><p class="pg__say"></p></div>` : "") +
       `<div class="pg__bar">` +
@@ -50,7 +58,6 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
       `<div class="pg__switches"></div>` +
       `<div class="pg__hazards"></div>` +
       `<div class="pg__goal" hidden></div>` +
-      `<div class="pg__board"><table class="pg__bb"></table><table class="pg__log"></table></div>` +
       (cfg.editor ? `<div class="pg__edit"><textarea spellcheck="false" rows="12"></textarea><p class="pg__err" hidden></p><button type="button" class="pg__apply">Apply tree</button></div>` : "") +
     `</div>`;
   const q = (s) => host.querySelector(s);
@@ -106,7 +113,7 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
     }
   }
   function paintWorld(status) {
-    q(".pg__world").innerHTML = W.draw(sim.state);
+    q(".pg__map").innerHTML = W.draw(sim.state);
     q(".pg__tick b").textContent = String(sim.t);
     q(".pg__tick i").textContent = status ?? "Idle";
     const v = W.view(sim.state);

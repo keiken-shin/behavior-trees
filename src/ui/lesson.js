@@ -283,7 +283,8 @@ export function renderLesson(root, id) {
 
   /* ── after the chapter ──────────────────────────────────────────────────
      The footer nav sits outside the reading column, as a plain block beneath
-     it, so it can have the full width honestly.
+     it, held to the text's own 68ch measure rather than the column's full
+     width - see app.css's .foot rule.
 
      Order matters too: read the chapter, fly it, then leave. The footer nav used
      to sit above the playground inside the reading column, which put "next chapter"
