@@ -59,7 +59,9 @@ export function graphView(host) {
     }
     vb = { ...base }; setVB();
   };
-  const ro = new ResizeObserver(frame);
+  /* Deferred a frame: frame() changes the stage's height, and doing that
+     inside the observer's own callback is the "ResizeObserver loop" error. */
+  const ro = new ResizeObserver(() => requestAnimationFrame(frame));
   ro.observe(stage);
   const zoom = (k, cx, cy) => {
     /* Zoom about a point in viewBox units, clamped so the tree cannot vanish. */
