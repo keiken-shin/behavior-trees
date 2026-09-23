@@ -69,10 +69,15 @@ for (const [id, sc] of Object.entries(SCENES)) {
   });
 }
 
-/* ── a caption that hard codes a tick is worth a look ────────────────────── */
+/* ── a caption that names a number other than {t} is worth a look ────────── */
+/* Spec section 7: a note, never a failure. Each one is a count or a value the
+   caption states outright, so each is a conscious decision that it holds. */
+const COUNT = /\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred)\b/gi;
 for (const [id, sc] of Object.entries(SCENES))
-  for (const [i, st] of sc.steps.entries())
-    if (/\btick \d+\b/.test(st.say)) console.log(`  note  ${id} step ${i + 1} names a tick number in its caption; prefer {t}`);
+  for (const [i, st] of sc.steps.entries()) {
+    const named = st.say.replaceAll("{t}", "").match(COUNT);
+    if (named) console.log(`  note  ${id} step ${i + 1} names ${named.map((w) => `"${w}"`).join(", ")} outside {t}`);
+  }
 
 /* ── the unlocked stage's goal is reachable ──────────────────────────────── */
 for (const [id, sc] of Object.entries(SCENES)) {

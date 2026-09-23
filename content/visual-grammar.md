@@ -50,7 +50,7 @@ The flash is ink, not a status colour, because a halt is not an answer.
 A hatched ellipse is a condition that changed the world while answering.
 The node card reads only from the trace and the built tree.
 The scrubber replays stored ticks and never re-simulates.
-Captions may name a tick only through `{t}`, which the run fills in; `scripts/check-scenes.mjs` notes a caption that hard codes one.
+Captions may name a tick only through `{t}`, which the run fills in; `scripts/check-scenes.mjs` notes a caption that names any other number, in digits or in words, so each one is checked by hand.
 The graph never starts smaller than reading size: when the whole tree would put a label under about 9 px, the view opens on the root at that size and the reader pans.
 A side where the tree goes on past the pane fades out instead of cutting a label.
 When a tick changes a node that is out of view, or halts one, the view pans to it without zooming.

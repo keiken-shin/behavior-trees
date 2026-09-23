@@ -71,7 +71,9 @@ Layout inside the host:
 - Right: the world map from `world.draw(state)` and the readout from `world.view(state)`, as the playground draws them today.
 - Under both: the step strip (numbered buttons, one per step, plus "next"), the caption line, and a tick counter.
 - After the last step: the playground controls appear in the same host (Step, Play, rate, Reset, hazards, variants, editor, goal, counter) and behave as today.
-  "Reset" returns to step 1.
+  "Reset" starts the current tree again at tick 0, with the variant, mode or edit the reader chose, and stays unlocked.
+  The step 1 button is the way to tell the story again, on the scene's own tree.
+  (Amended in the fix wave: "Reset returns to step 1" threw away the choice a brief had just asked for.)
 
 Running a step animates the ticks at 20 per second so the reader sees the walk, with a "skip" that jumps to the step's stop.
 The sim is the same `start()` / `advance()` from `src/bt/run.js` the playground uses; nothing in the scene simulates on its own.

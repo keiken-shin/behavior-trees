@@ -23,6 +23,7 @@ This sits in the gap: twelve chapters, each with a real interpreter ticking a re
   Each is the interpreter ticking the drone on a live graph of the tree.
   Twelve tell their story first, 33 steps in all, each step run until the moment its caption names.
   Then the controls unlock: step, play, rate and the scene's hazards, plus tree variants, a mode switch or the editor where the chapter needs them.
+  Reset starts the tree the reader chose again at tick 0, and a step button tells the story again.
   A scrubber replays the stored ticks.
   The design chapter's scene hands over the whole mission at once, with the editor open.
 - **Three authored SVG drawings**, all in the design chapter, where no run can show the point: backward chaining, the real Nav2 tree drawn from its own XML, and where the tree sits above the autopilot.
@@ -98,11 +99,12 @@ scripts/    the six check scripts and the video curation script
 
 - **`check-bt.mjs`** ticks the interpreter through the textbook's three algorithms, all three composite modes, all four decorators, halting, the trace, the blackboard log, and condition purity.
 - **`check-world.mjs`** runs the drone world headless: kinematics, every leaf, every hazard, and the two facts the checkride depends on - a reactive tree returns home on a battery drop, a memory tree does not.
+  It also holds the graph's halt flash to the interpreter: a timeout's halt shows on its own tick and not on the next.
 - **`check-figures.mjs`** re-lays out the three drawings and the index tree at every one of their states and fails if a mark lands on another mark or off the page, or a label does not fit its node.
 - **`check-content.mjs`** audits what the course *says*: every chapter carries its spine (a concrete opening, a scene or a drawing, a myth and a check) and no old playground block, every myth and fact cites a real source and none rests on a forum post, every source carries a title and URL and a grade in words, the dialect table is fully sourced, cross-references resolve, every drawing and every scene block a chapter names actually exists, and every asset a chapter imports is tracked so a clean checkout builds.
 - **`check-checkride.mjs`** judges all five checkride items with their reference tree and their misconception tree, fails if a reference does not pass or a misconception does, fails if two items give the same reason, and probes two items to catch a judge that claims more than the run actually proves.
 - **`check-scenes.mjs`** runs every scene headless: every scene block names a scene that exists and every scene is placed in a chapter, every tree and variant parses, every hazard id is real, every step reaches its moment within its cap with `{t}` filled in, and every unlocked goal can be met.
-  It notes a caption that hard codes a tick number instead of `{t}`.
+  It notes, without failing, a caption that names a number outside `{t}`, in digits or in words.
 
 ## Design
 

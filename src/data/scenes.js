@@ -75,7 +75,7 @@ SCENES["tick/root-to-leaf"] = {
     { say: "Tick two: the same walk again, from the root. Nothing is remembered between ticks.", to: 2 },
     { say: "At tick {t} FlyTo answered Success, and the Sequence moved on to Drop.", to: (s, h) => answered(h, "n5", "Success"), cap: 400 },
   ],
-  then: { hazards: [], brief: "Step it one tick at a time and read each answer. Then play it to the end.",
+  then: { hazards: [], brief: "Reset, then step it one tick at a time and read each answer. Then play it to the end.",
     goal: { test: (s) => s.delivered, done: "Drop answered Success. The job is done, and the tree will be asked again anyway." } },
 };
 
@@ -100,7 +100,7 @@ SCENES["sequence/todo"] = {
   steps: [
     { say: "The check passed, TakeOff passed, FlyTo is Running. So is the list.", to: 1 },
     { say: "Battery dropped. At tick {t} the check failed, so the list failed at that child. Nothing to its right was asked.", hazard: "battery12", to: (s, h) => last(h)?.status === "Failure" },
-    { say: "The next tick the list started from its first child again. It does not remember where it was.", to: (s, h) => h.length >= 2 && answered(h, "n1", "Failure") && h[h.length - 2].status === "Failure" },
+    { say: "The next tick the list was asked from its first child again, as it is on every tick. That is how the check caught the drop while FlyTo was still Running.", to: (s, h) => h.length >= 2 && answered(h, "n1", "Failure") && h[h.length - 2].status === "Failure" },
   ],
   then: { hazards: ["battery12"], brief: "Flip the list to memory and drop the battery again. Watch where it restarts.",
     variants: [

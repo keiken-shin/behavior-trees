@@ -1,5 +1,5 @@
 /* Where each node of a tree sits. Shared by the authored plates (svg.js) and
-   the live graph (graph-view.js) so a figure and the playground can never
+   the live graph (graph-view.js) so a drawing and a live scene can never
    draw the same tree two different ways.
    Simple by design: every subtree is as wide as its children side by side (or
    its own node, if that is wider), and a parent is centred between its first
