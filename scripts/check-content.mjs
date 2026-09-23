@@ -88,14 +88,12 @@ missingFigs.length
   ? fail(`figures referenced but not built: ${missingFigs.join(", ")}`)
   : pass(`all ${Object.keys(DIAGRAMS).length} figure builders resolve`);
 
-/* ── every scene block resolves, and every chapter has one ───────────────── */
-const badPlays = [];
-for (const les of LESSONS)
-  for (const b of les.flow.filter((x) => x.t === "scene"))
-    if (!SCENES[b.id]) badPlays.push(`${les.id} → ${b.id}`);
+/* ── every scene block that exists resolves ──────────────────────────────── */
+const sceneBlocks = LESSONS.flatMap((les) => les.flow.filter((x) => x.t === "scene").map((b) => ({ les, b })));
+const badPlays = sceneBlocks.filter(({ b }) => !SCENES[b.id]).map(({ les, b }) => `${les.id} → ${b.id}`);
 badPlays.length
   ? fail(`scene blocks with no configuration in scenes.js: ${badPlays.join(", ")}`)
-  : pass(`all ${Object.keys(SCENES).length} playgrounds resolve`);
+  : pass(`${sceneBlocks.length} scene block(s) resolve; scenes themselves are checked by check-scenes.mjs`);
 
 /* ── the appendix must never become homework ─────────────────────────────── */
 const deck = buildDeck();

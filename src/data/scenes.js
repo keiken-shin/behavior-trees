@@ -6,7 +6,9 @@
    (state, history). `hazard` is applied on the step's first tick through
    advance(), never by a direct call. `say` is the caption, with {t} for the
    tick the step stopped at. `then` is the unlocked stage: the playground's own
-   configuration, so the plays of version one live on here unchanged. */
+   configuration, so the plays of version one are carried over here, revised:
+   some ids, trees and goals changed, and captions replace what used to be
+   prose in `then.brief`/`then.goal.done`. */
 import { start, advance, switchCount } from "../bt/run.js";
 import { build } from "../bt/tree.js";
 import { parse } from "../bt/parse.js";
@@ -35,7 +37,7 @@ export function runSteps(sc) {
   const stops = [];
   sc.steps.forEach((step, i) => {
     const cap = sim.t + (step.cap ?? 600);
-    let first = true, ok = stepDone(sim, step) && typeof step.to !== "number";
+    let first = true, ok = !step.hazard && stepDone(sim, step) && typeof step.to !== "number";
     while (!ok && sim.t < cap) {
       const hz = first && step.hazard ? W.hazards.find((h) => h.id === step.hazard) : undefined;
       first = false;
@@ -126,8 +128,8 @@ SCENES["condition/pure"] = {
       tick: (s) => { s.y -= 0.5; s.mutations++; return "Success"; } },
   },
   steps: [
-    { say: "The ellipse answered Success. The rounded box is still flying, so it answered Running.", to: 1 },
-    { say: "Hatched. The interpreter counted a change to the world while the ellipse was answering. A condition may only ask.", to: 2 },
+    { say: "The ellipse answered Success, and it is already hatched: it changed the world while answering. The rounded box is still flying, so it answered Running.", to: 1 },
+    { say: "Tick two: hatched again. The cheat happens on every tick, and a condition may only ask.", to: 2 },
   ],
   then: { hazards: [], brief: "Play it. The hatch never goes away, because the cheat happens every tick.",
     goal: { test: (s, h) => h.some((x) => x.trace.some((n) => n.dirty)), done: "Caught. A condition changed the world and the tree said so." } },
@@ -172,7 +174,7 @@ SCENES["decorators/kinds"] = {
   steps: [
     { say: "Two rhombuses, each with exactly one child. Neither has had to rule yet.", to: 1 },
     { say: "Parcel dropped at tick {t}. The flight home starts, under the timeout.", to: (s) => s.delivered, cap: 400 },
-    { say: "A gust from the west. The flight home fought it for 200 ticks; at tick {t} the timeout halted ReturnHome and answered Failure, so the delivery failed.", hazard: "gust", to: (s, h) => answered(h, "n9", "Failure"), cap: 2500 },
+    { say: "The flight home ran 200 ticks under the timeout; at tick {t} the timeout halted ReturnHome and answered Failure, so the delivery failed.", hazard: "gust", to: (s, h) => answered(h, "n9", "Failure"), cap: 2500 },
   ],
   then: { hazards: ["gust", "calm"], brief: "Reset and play without the gust: the flight home finishes inside 200 ticks and the timeout never speaks.",
     goal: { test: (s, h) => h.some((x) => x.trace.some((n) => n.status === "Failure" && n.id === "n9")), done: "The timeout gave up on the flight. The Sequence failed, and the tree is asked again." } },
@@ -185,7 +187,7 @@ SCENES["parallel/m-of-n"] = {
   start: (s) => { s.battery = 40; },
   steps: [
     { say: "All three ticked. Land is done at once, Hover never finishes, Charge is still filling. One Success against a threshold of two.", to: 1 },
-    { say: "Charge finished at tick {t}. Two Successes met the threshold, so the Parallel answered Success, and Hover was halted.", to: (s, h) => last(h)?.status === "Success", cap: 400 },
+    { say: "Charge finished at tick {t}. Two Successes met the threshold, so the Parallel answered Success, even though Hover is still Running.", to: (s, h) => last(h)?.status === "Success", cap: 400 },
   ],
   then: { hazards: [], brief: "Reset and step it. Every child is asked every tick, and the count decides.",
     goal: { test: (s, h) => h.some((x) => x.status === "Success"), done: "Two of three, and the Parallel answered Success." } },
@@ -212,7 +214,7 @@ SCENES["blackboard/ports"] = {
   tree: GOALTREE,
   steps: [
     { say: "FlyTo Goal read the goal key this tick. It holds no copy of its own.", to: 1 },
-    { say: "The goal moved to B at tick {t}. On the next tick FlyTo read B and turned. Nothing in the tree changed.", hazard: "goalB", to: (s) => s.target && s.target.x === s.waypoints.B.x && s.target.y === s.waypoints.B.y, cap: 10 },
+    { say: "The goal moved to B before tick {t}. On that same tick FlyTo read B and turned. Nothing in the tree changed.", hazard: "goalB", to: (s) => s.target && s.target.x === s.waypoints.B.x && s.target.y === s.waypoints.B.y, cap: 10 },
     { say: "Delivered at B at tick {t}.", to: (s) => s.delivered, cap: 2500 },
   ],
   then: { hazards: ["goalB"], brief: "Switch to the tree that typed the waypoint in, reset, and move the goal again.",
