@@ -159,9 +159,11 @@ export function graphView(host) {
       ev.preventDefault();
       pick(id);
     }, { signal });
+    /* Keyboard focus only: a mouse press focuses the node too, and panning
+       then would jump the tree under a drag that has already started. */
     svg.addEventListener("focusin", (ev) => {
-      const id = ev.target.closest?.("g[data-id]")?.dataset.id;
-      if (id) follow([id], false);
+      const g = ev.target.closest?.("g[data-id]");
+      if (g && g.matches(":focus-visible")) follow([g.dataset.id], false);
     }, { signal });
     q(".gv__fit").onclick = fitAll;
     q(".gv__in").onclick = () => zoom(1 / 1.25, vb.x + vb.w / 2, vb.y + vb.h / 2);

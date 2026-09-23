@@ -191,9 +191,12 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
     next.textContent = at === 0 ? "Start" : "Next";
     /* Next and skip go once the story is told. Focus on either moves to the
        free Step button the unlock just showed, not to the page. */
-    const told = at === steps.length, held = document.activeElement === next || document.activeElement === skip;
+    const a = document.activeElement;
+    const told = at === steps.length, held = (a === next || a === skip) && a.matches(":focus-visible");
     next.hidden = skip.hidden = told;
-    if (told && held) q(".pg__step").focus();
+    /* Keyboard focus only (a tap focuses a button too), and never scrolled:
+       on a phone a scroll-into-view here threw the graph off the screen. */
+    if (told && held) q(".pg__step").focus({ preventScroll: true });
     if (at === 0) q(".pg__say").textContent = "";
   }
   /* Run step i on the scene's own tree. i === at (Next or skip on the step
