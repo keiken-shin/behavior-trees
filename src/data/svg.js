@@ -143,6 +143,6 @@ function figure({ title, desc, states = [], captions = [], vb = `0 0 ${VB_W} ${V
 }
 
 export {
-  line, chip, note, figure, n, esc,
+  line, chip, note, figure, esc,
   node, edge, craft, tree,
 };
