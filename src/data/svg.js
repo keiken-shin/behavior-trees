@@ -2,7 +2,7 @@
    by construction. Diagrams are built as strings - simpler than DOM here, and the
    output is inspectable. Colour is never passed in; only a semantic `kind`. */
 
-import { layout } from "../bt/layout.js";
+import { layout, ADV, room } from "../bt/layout.js";
 
 const VB_W = 800, VB_H = 500;
 
@@ -41,10 +41,6 @@ function note(cx, cy, text, { anchor = "middle" } = {}) {
    plate may ask for. Mirrored by scripts/check-figures.mjs, which measures what
    this writes. */
 const LABEL_FS = { "node-t--sm": 10, "node-t--xs": 9 };
-const ADV = 0.6;                       // JetBrains Mono is monospaced
-/* How much of a shape's width its label may use: a rect gets an 8 px inset, and
-   an ellipse and a rhombus are narrower than their box where the text sits. */
-const room = (kind, w) => (kind === "Condition" ? 0.82 * w : kind === "Decorator" ? 0.6 * w : w - 8);
 
 /* Where to break a label that will not fit on one line: the last CamelCase
    boundary or space at or before the midpoint. Where that still leaves a line
@@ -106,7 +102,7 @@ function craft(cx, cy, heading, { landed = false } = {}) {
    ok | fail | run; `pulse` maps an edge "from>to" to 0..1; `hrefs` maps id to
    a link (the index plate). */
 function tree(spec, { x = 0, y = 0, status = {}, dirty = {}, pulse = {}, hrefs = {}, labelClass = "", twoLine = false, ...opts } = {}) {
-  const L = layout(spec, opts);
+  const L = layout(spec, { fs: LABEL_FS[labelClass] ?? 12, ...opts });
   const edges = L.edges.map((e) => edge(x + e.x1, y + e.y1, x + e.x2, y + e.y2, { pulse: pulse[`${e.from}>${e.to}`] ?? null })).join("");
   const nodes = L.nodes.map((d) => node(d.kind, x + d.x, y + d.y, d.label,
     { status: status[d.id] ?? "idle", w: d.w, h: d.h, dirty: !!dirty[d.id], href: hrefs[d.id] ?? null, labelClass, twoLine })).join("");

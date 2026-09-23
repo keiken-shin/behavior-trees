@@ -328,6 +328,15 @@ t("layout: a parent sits centred over its children, siblings do not overlap", ()
   assert.equal(edges.length, nodes.length - 1);
   assert.ok(root.y < a.y && a.y < by.n2.y);
 });
+t("layout: a node takes its own label's width, between the floor and the ceiling", () => {
+  const { nodes } = layout(parse("? root\n  BatteryBelow 30\n  Land", LEAVES), { minW: 56, maxW: 200, fs: 12 });
+  const by = Object.fromEntries(nodes.map((n) => [n.label, n.w]));
+  assert.ok(by["BatteryBelow 30"] > by["Land"], "a long label gets a wider node than a short one");
+  assert.equal(by["Land"], 56, "a short label sits on the floor");
+  assert.ok(0.6 * 12 * "BatteryBelow 30".length <= 0.82 * by["BatteryBelow 30"], "the ellipse holds its label");
+  const capped = layout(parse("? root\n  BatteryBelow 30", LEAVES), { maxW: 80 }).nodes.find((n) => n.kind === "Condition");
+  assert.equal(capped.w, 80, "the ceiling holds");
+});
 t("labelOf names a node by its name, else its symbol or leaf", () => {
   assert.equal(labelOf({ kind: "Fallback", name: "root" }), "? root");
   assert.equal(labelOf({ kind: "Sequence" }), "->");

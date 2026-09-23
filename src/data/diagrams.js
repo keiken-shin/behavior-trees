@@ -21,9 +21,9 @@ D["design/backchain"] = () => {
   const s1 = T("? parcel at goal\n  Delivered");
   const s2 = T("? parcel at goal\n  Delivered\n  -> \n    AtWaypoint Goal\n    Drop");
   const goal = T("? parcel at goal\n  Delivered\n  -> \n    ? at the goal\n      AtWaypoint Goal\n      FlyTo Goal\n    Drop");
-  /* 136: "AtWaypoint Goal" in an ellipse, and "? parcel at goal" in a rect. Four
-     leaf slots at that width still leave a wide margin inside 800. */
-  const at = { x: 96, y: 60, nodeW: 136 };
+  /* Every node takes its own label's width. The goal tree, the widest state,
+     is centred in the 800 frame, and every state draws from the same origin. */
+  const at = { x: Math.round((800 - layout(goal).w) / 2), y: 60 };
   /* Every state redraws a differently shaped tree from the same origin, and a
      cumulative state never hides an earlier one (only .s2/.s3/.s4 fade IN), so
      without help state 4 would show all three trees stacked - "? parcel at
@@ -32,8 +32,8 @@ D["design/backchain"] = () => {
      scripts/check-figures.mjs) covers exactly the box the previous tree's nodes occupy
      before the next, larger tree is drawn over it. State 4 adds no tree of its
      own, so it needs no mask - it keeps state 3's and only adds the note. */
-  const maskS1 = `<rect class="chip" x="96" y="60" width="152" height="130"/>`;
-  const maskS2 = `<rect class="chip" x="96" y="60" width="456" height="210"/>`;
+  const mask = (s) => { const L = layout(s, at); return `<rect class="chip" x="${at.x}" y="${at.y}" width="${L.w}" height="${L.h}"/>`; };
+  const maskS1 = mask(s1), maskS2 = mask(s2);
   return figure({
     title: "Backward chaining: start from done and add a branch for each thing that could be false",
     desc: "A tree grown from the goal. The root Fallback checks the parcel is delivered; if not, a Sequence gets to the goal, using a Fallback that checks the drone is already there before flying, then drops.",
@@ -63,7 +63,7 @@ D["nav2/tree"] = () => {
      is as wide as the tree really is. An SVG scales to whatever column it is
      given, so the old fit scale only ever bought a smaller drawing of the same
      collision. */
-  const small = { nodeW: 120, nodeH: 22, hGap: 4, vGap: 34, labelClass: "node-t--xs", twoLine: true };
+  const small = { maxW: 120, fs: 9, nodeH: 22, hGap: 4, vGap: 34, labelClass: "node-t--xs", twoLine: true };
   const L = layout(spec, small);
   /* 20 of margin each side, and enough below the deepest row for the note to
      clear both the last row of boxes and the caption band. */
@@ -120,11 +120,12 @@ export function indexTree(lessons) {
     ],
   };
   const hrefs = Object.fromEntries(lessons.map((l) => [l.id, `#${l.id}`]));
-  const L = layout(spec, { nodeW: 118, nodeH: 40, hGap: 10, vGap: 60 });
+  const at = { maxW: 118, nodeH: 40, hGap: 10, vGap: 60 };
+  const L = layout(spec, at);
   const title = "The course drawn as a tree; every leaf is a chapter";
   const desc = "The whole course as one behavior tree: a root Fallback over four Sequences - the tick, control, power, the world - each holding its chapters as leaves. Every leaf is a link to that chapter, not a run.";
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${L.w} ${L.h}" class="figure figure--index" role="img" aria-label="${esc(title)}"><title>${esc(title)}</title><desc>${esc(desc)}</desc>` +
-    tree(spec, { hrefs, nodeW: 118, nodeH: 40, hGap: 10, vGap: 60 }) + `</svg>`;
+    tree(spec, { hrefs, ...at }) + `</svg>`;
 }
 
 export default D;

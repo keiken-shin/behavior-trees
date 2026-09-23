@@ -3,13 +3,17 @@
    as a class, edges pulse in the order the tick walked, a node that was Running
    and is not visited flashes once (the halt), and a click opens a card that
    reads from the trace and the built tree, nothing else. Pan by drag, zoom by
-   ctrl+wheel or meta+wheel (also a trackpad pinch) or the buttons, fit to reset. */
+   ctrl+wheel or meta+wheel (also a trackpad pinch) or the buttons, fit to reset.
+   The tree never starts smaller than reading size: when the whole of it would
+   put a label under about 9 px, the view starts on the root at that size and
+   the reader pans for the rest. */
 import { layout } from "../bt/layout.js";
 import { node, edge, esc } from "../data/svg.js";
 import { walkOrder } from "../bt/run.js";
 
 const ST = { Success: "ok", Failure: "fail", Running: "run" };
-const OPTS = { nodeW: 140, nodeH: 34, hGap: 8, vGap: 44 };
+const OPTS = { nodeH: 34, hGap: 8, vGap: 44 };
+const MIN_SCALE = 0.75;   // a 12 px label is never drawn under 9 px
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
 let seq = 0;   // a fresh hatch pattern id per view, so two scenes on one page never share a DOM id
 
@@ -19,7 +23,7 @@ export function graphView(host) {
     `<div class="gv">` +
       `<div class="gv__stage"></div>` +
       `<div class="gv__tools">` +
-        `<button type="button" class="gv__fit" title="fit the whole tree">fit</button>` +
+        `<button type="button" class="gv__fit" title="back to the start view">fit</button>` +
         `<button type="button" class="gv__in" aria-label="zoom in" title="zoom in (ctrl or meta + wheel also zooms)">+</button>` +
         `<button type="button" class="gv__out" aria-label="zoom out" title="zoom out (ctrl or meta + wheel also zooms)">-</button>` +
       `</div>` +
@@ -28,9 +32,34 @@ export function graphView(host) {
   const q = (s) => host.querySelector(s);
   const stage = q(".gv__stage"), card = q(".gv__card");
   let svg = null, byId = new Map(), edgeTo = new Map(), base = null, vb = null, ac = null;
+  let full = null, rootX = 0, paneW = 0;
   let bt = null, lastEntry = null, lastReplay = false, picked = null, prevRunning = new Set();
 
   const setVB = () => svg && svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+  /* The start view, from the pane's real width. The whole tree when it fits at
+     reading size, rendered no larger than its own size and centred (capped by
+     max-width plus the stylesheet's auto margins, so the checkride's smallest
+     trees do not balloon). Otherwise a window at MIN_SCALE, level with the
+     root. Run by a ResizeObserver, not at render(): a host mounted off the
+     page (Task 4's pattern) has no width yet, and a pane that changes width
+     needs a new start view. */
+  const frame = () => {
+    const w = stage.clientWidth;
+    if (!svg || !w || w === paneW) return;
+    paneW = w;
+    const maxH = parseFloat(getComputedStyle(svg).maxHeight) || Infinity;
+    if (Math.min(w / full.w, maxH / full.h, 1) >= MIN_SCALE) {
+      base = { ...full };
+      svg.style.maxWidth = `${full.w}px`;
+    } else {
+      const bw = Math.min(full.w, w / MIN_SCALE), bh = Math.min(full.h, maxH / MIN_SCALE);
+      base = { x: Math.min(full.w - bw, Math.max(0, rootX - bw / 2)), y: 0, w: bw, h: bh };
+      svg.style.maxWidth = `${bw * MIN_SCALE}px`;
+    }
+    vb = { ...base }; setVB();
+  };
+  const ro = new ResizeObserver(frame);
+  ro.observe(stage);
   const zoom = (k, cx, cy) => {
     /* Zoom about a point in viewBox units, clamped so the tree cannot vanish. */
     const w = Math.min(base.w * 4, Math.max(base.w / 4, vb.w * k));
@@ -129,15 +158,10 @@ export function graphView(host) {
         L.nodes.map((d) => node(d.kind, d.x, d.y, d.label, { w: d.w, h: d.h }).replace("<g class=", `<g data-id="${d.id}" class=`)).join("") +
         `</svg>`;
       svg = stage.firstElementChild;
-      /* A tree narrower than its own pane renders at its own size, centred,
-         not stretched to fill the pane - the checkride's smallest trees
-         would otherwise balloon to the height of a thirteen-node one. Capped
-         in CSS (max-width plus the stylesheet's auto margins) rather than by
-         measuring the stage here: a host mounted off the page - Task 4's
-         pattern - has a clientWidth of 0 at render() time, which a
-         measurement would wrongly treat as "no cap needed". */
+      full = { x: 0, y: 0, w: L.w, h: L.h }; rootX = L.nodes[0].x;
       svg.style.maxWidth = `${L.w}px`;
-      base = { x: 0, y: 0, w: L.w, h: L.h }; vb = { ...base }; setVB();
+      base = { ...full }; vb = { ...base }; setVB();
+      paneW = 0; frame();
       byId = new Map([...svg.querySelectorAll("g[data-id]")].map((g) => [g.dataset.id, g]));
       edgeTo = new Map([...svg.querySelectorAll("line[data-to]")].map((l) => [l.dataset.to, l]));
       bind();
@@ -177,6 +201,6 @@ export function graphView(host) {
       this.paint(history[i], history[i - 1] ?? { trace: [] }, true);
     },
     fit() { if (base) { vb = { ...base }; setVB(); } },
-    destroy() { ac?.abort(); ac = null; host.innerHTML = ""; svg = null; byId = new Map(); edgeTo = new Map(); },
+    destroy() { ro.disconnect(); ac?.abort(); ac = null; host.innerHTML = ""; svg = null; byId = new Map(); edgeTo = new Map(); },
   };
 }
