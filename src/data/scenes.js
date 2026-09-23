@@ -242,7 +242,7 @@ SCENES["fsm/transitions"] = {
   world: "drone", scenario: "delivery",
   tree: PREEMPT,
   steps: [
-    { say: "One branch chosen: the delivery. Switches so far: none.", to: 1 },
+    { say: "One branch chosen: the delivery. Switches so far: none.", to: 1, show: ["n0", "n5"] },
     { say: "The battery dropped and control moved to the safety branch at tick {t}. One switch: one arrow you would have had to draw.", hazard: "battery12", to: (s, h) => switchCount(h, PREEMPT_KIDS) >= 1 },
     { say: "Three switches by tick {t}. The tree chatters at the 30 percent line: charging lifts the battery above it, the flight drops it back below.", to: (s, h) => switchCount(h, PREEMPT_KIDS) >= 3, cap: 900 },
   ],

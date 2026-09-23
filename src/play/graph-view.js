@@ -34,7 +34,7 @@ export function graphView(host) {
   const q = (s) => host.querySelector(s);
   const stage = q(".gv__stage"), card = q(".gv__card");
   let svg = null, byId = new Map(), edgeTo = new Map(), base = null, vb = null, ac = null;
-  let full = null, rootX = 0, paneW = 0, geo = new Map();
+  let full = null, rootX = 0, paneW = 0, geo = new Map(), edgeL = 0, edgeR = 0;
   let bt = null, lastEntry = null, lastReplay = false, picked = null, prevRunning = new Set();
 
   /* Every view change goes through here, so the edge fades always say whether
@@ -42,8 +42,10 @@ export function graphView(host) {
   const setVB = () => {
     if (!svg) return;
     svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
-    stage.classList.toggle("gv--cut-l", vb.x > 0.5);
-    stage.classList.toggle("gv--cut-r", vb.x + vb.w < full.w - 0.5);
+    /* Against the outermost nodes, not the tree's frame: its empty margin
+       being out of view cuts nothing. */
+    stage.classList.toggle("gv--cut-l", vb.x > edgeL + 0.5);
+    stage.classList.toggle("gv--cut-r", vb.x + vb.w < edgeR - 0.5);
   };
   /* The whole tree, in the start view's aspect so the pane keeps its height:
      as wide as the tree (or as tall, if that is the tighter side), from the top. */
@@ -199,6 +201,7 @@ export function graphView(host) {
       svg = stage.firstElementChild;
       full = { x: 0, y: 0, w: L.w, h: L.h }; rootX = L.nodes[0].x;
       geo = new Map(L.nodes.map((d) => [d.id, d]));
+      edgeL = Math.min(...L.nodes.map((d) => d.x - d.w / 2)); edgeR = Math.max(...L.nodes.map((d) => d.x + d.w / 2));
       svg.style.maxWidth = `${L.w}px`;
       base = { ...full }; vb = { ...base }; setVB();
       paneW = 0; frame();
