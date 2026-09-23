@@ -26,6 +26,7 @@ A greyscale print must still read, which it does, because kind never depends on 
 
 Every tree on a plate is written in the text form and laid out by `src/bt/layout.js`, the same code the playground uses.
 A plate can therefore never show a shape the playground would draw differently.
+Each node is as wide as its own label needs, between a floor and a ceiling, so a short label never pays for the longest one.
 
 ## 4. Progressive states
 
@@ -38,3 +39,17 @@ The caption names what was added.
 Three, as in the flight course: hairline, rule, line.
 Edges are rule weight.
 Node outlines are line weight.
+
+## 6. Scenes
+
+A scene is the interpreter running: `src/bt/tree.js` ticking the drone world, not a drawing of it.
+Node colour is the answer this tick, and a node not asked this tick is paper.
+An edge pulse in the tick colour is the walk, drawn in the order the tick walked it.
+A flash on a node is the halt: a heavy ink outline that fades, on a node that was Running and was not asked, or that the trace marks halted inside the tick.
+The flash is ink, not a status colour, because a halt is not an answer.
+A hatched ellipse is a condition that changed the world while answering.
+The node card reads only from the trace and the built tree.
+The scrubber replays stored ticks and never re-simulates.
+Captions may name a tick only through `{t}`, which the run fills in; `scripts/check-scenes.mjs` notes a caption that hard codes one.
+The graph never starts smaller than reading size: when the whole tree would put a label under about 9 px, the view opens on the root at that size and the reader pans.
+With reduced motion on, nothing pulses and nothing flashes; the colours still answer.

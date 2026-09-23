@@ -72,8 +72,11 @@ light/dark theming from a semantic token layer.
 travels to a second subject with content changes only.
 Twelve chapters, 2D only - the tree is an SVG drawing and the map is a top-down scene, not
 a Three.js sandbox.
+Each chapter is one reading column with a live scene inline where the text names its moment: the interpreter ticking the drone on a live graph of the tree, telling its story in steps first and then handing over the controls (the design chapter hands them over at once).
+Thirteen scenes in all: one in each chapter, and a second in the Parallel chapter.
+Three authored drawings survive, all in the design chapter, where no run can show the point.
 Text-only tree editing; drag-and-drop editing is out of scope.
-The real Nav2 tree is drawn from its own XML as a plate, not executed.
+The real Nav2 tree is drawn from its own XML, not executed.
 The home robot world, driving the flight course's air-combat bandit with a tree, and
 generated hero imagery all stay out of scope for this pass, named so none of them quietly
 vanish.
@@ -95,11 +98,12 @@ received and is worth preserving.
 
 - `src/bt/tree.js` - the interpreter, about 150 lines, asserted tick for tick against the
   textbook's algorithms by `scripts/check-bt.mjs`
-- `src/data/diagrams.js` + `src/data/svg.js` - fifteen figure builders (fourteen chapter
-  plates plus the index tree) on a semantic primitive layer
+- `src/data/scenes.js` - the thirteen scenes as data: each one's tree, its story steps and the moment each step waits for, and what unlocks after.
+- `scripts/check-scenes.mjs` - runs every scene headless and fails if a step's moment never comes, a caption is left with `{t}` unfilled, or an unlocked goal cannot be met.
+- `src/data/diagrams.js` + `src/data/svg.js` - four figure builders (the three drawings in the design chapter plus the index tree) on a semantic primitive layer
 - `content/videos.json` - 128 candidates, 27 picked with a written note each, from 17
   channels, across all twelve chapters
-- `content/visual-grammar.md` - the figure contract, proven against the real figures
+- `content/visual-grammar.md` - the figure contract, proven against the real figures, and what a scene's colours, pulses and flashes mean
 - `content/concepts.json` - the curriculum spine
 - `content/sources.json` - 44 sources; every myth and fact in the lessons names one, checked by `scripts/check-content.mjs`
 - `RESEARCH.md` - the research this course's every claim traces back to
