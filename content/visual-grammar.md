@@ -10,7 +10,7 @@ Written before figure one so consistency is structural.
 | Success | `--s-ok` | fill and stroke of a node that answered Success this tick |
 | Failure | `--s-fail` | fill and stroke of a node that answered Failure this tick |
 | Running | `--s-run` | fill and stroke of a node that answered Running this tick |
-| The tick | `--s-tick` | a dot travelling down an edge |
+| The tick | `--s-tick` | an edge drawn in the tick colour, in walk order (live graph only) |
 | Idle | paper | a node not visited this tick |
 
 Nothing else on a plate is coloured.
@@ -24,8 +24,8 @@ A greyscale print must still read, which it does, because kind never depends on 
 
 ## 3. One tree, one drawing
 
-Every tree on a plate is written in the text form and laid out by `src/bt/layout.js`, the same code the playground uses.
-A plate can therefore never show a shape the playground would draw differently.
+Every tree on a plate is written in the text form and laid out by `src/bt/layout.js`, the same code the scenes use.
+A plate can therefore never show a shape a scene would draw differently.
 Each node is as wide as its own label needs, between a floor and a ceiling, so a short label never pays for the longest one.
 
 ## 4. Progressive states
@@ -52,4 +52,8 @@ The node card reads only from the trace and the built tree.
 The scrubber replays stored ticks and never re-simulates.
 Captions may name a tick only through `{t}`, which the run fills in; `scripts/check-scenes.mjs` notes a caption that hard codes one.
 The graph never starts smaller than reading size: when the whole tree would put a label under about 9 px, the view opens on the root at that size and the reader pans.
+A side where the tree goes on past the pane fades out instead of cutting a label.
+When a tick changes a node that is out of view, or halts one, the view pans to it without zooming.
+A story step can also name the nodes its caption is about, and when it lands the view pans to those instead.
+The fit button shows the whole tree, at whatever size that takes.
 With reduced motion on, nothing pulses and nothing flashes; the colours still answer.

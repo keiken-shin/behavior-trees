@@ -25,8 +25,10 @@ export function labelOf(s) {
    text sits, so they give a fraction of it. */
 export const ADV = 0.6;
 export const room = (kind, w) => (kind === "Condition" ? 0.82 * w : kind === "Decorator" ? 0.6 * w : w - 8);
-/* The inverse of room(), plus 16 px so a label never touches its outline. */
-const need = (kind, text) => (kind === "Condition" ? text / 0.82 : kind === "Decorator" ? text / 0.6 : text + 8) + 16;
+/* The inverse of room(), plus 8 px so a label never touches its outline.
+   Kept tight on purpose: on a phone the graph shows a window of the tree at
+   reading size, and every unit a node gives up is a neighbour that fits in it. */
+const need = (kind, text) => (kind === "Condition" ? text / 0.82 : kind === "Decorator" ? text / 0.6 : text + 8) + 8;
 
 /* `fs` is the label's font size in px; `minW` and `maxW` bound a node's width.
    A label wider than `maxW` allows is svg.js's to break onto two lines. */

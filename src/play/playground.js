@@ -204,6 +204,7 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
       stop();
       at = i + 1;
       q(".pg__say").textContent = ok ? fill(step.say, sim.t) : `This did not happen within ${step.cap ?? 600} ticks.`;
+      if (ok && step.show) view.show(step.show);
       if (at === steps.length) {
         story = false; pg.classList.remove("pg--story");
         /* A scene with no goal still owes onDone once the story is fully told. */

@@ -8,6 +8,7 @@ import { LESSONS } from "../src/data/lessons.js";
 import { WORLDS } from "../src/world/index.js";
 import { parse } from "../src/bt/parse.js";
 import { start, advance } from "../src/bt/run.js";
+import { build } from "../src/bt/tree.js";
 
 let failed = 0, passed = 0;
 const t = (name, fn) => {
@@ -32,6 +33,17 @@ for (const [id, sc] of Object.entries(SCENES)) {
   t(`${id}: tree and variants parse`, () => {
     parse(sc.tree, leaves);
     for (const v of sc.then?.variants ?? []) parse(v.tree, leaves);
+  });
+}
+
+/* ── every node a step shows is a node of the scene's tree ──────────────── */
+for (const [id, sc] of Object.entries(SCENES)) {
+  const shown = sc.steps.flatMap((s) => s.show ?? []);
+  if (!shown.length) continue;
+  const leaves = { ...WORLDS[sc.world].leaves, ...(sc.extraLeaves ?? {}) };
+  t(`${id}: every shown node is in the tree`, () => {
+    const ids = new Set(build(parse(sc.tree, leaves), leaves).all.map((n) => n.id));
+    for (const n of shown) assert.ok(ids.has(n), `${id}: no node "${n}" to show`);
   });
 }
 

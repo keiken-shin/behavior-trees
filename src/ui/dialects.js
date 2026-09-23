@@ -5,11 +5,15 @@ import SRC from "../../content/sources.json";
 import { COURSE } from "../data/lessons.js";
 import { el, mark } from "./util.js";
 
+/* Small counts are spelled out in prose, as everywhere else in the course. */
+const WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+const words = (n) => WORDS[n] ?? String(n);
+
 export function renderDialects(root) {
   root.innerHTML = "";
   const wrap = el("div", "cards");
   const head = el("div", "cards__head");
-  head.innerHTML = `<h1 class="t-display">Dialects</h1><p class="cards__lede">The same ${DIAL.rows.length} ideas in ${DIAL.columns.length} vocabularies. ` +
+  head.innerHTML = `<h1 class="t-display">Dialects</h1><p class="cards__lede">The same ${words(DIAL.rows.length)} ideas in ${words(DIAL.columns.length)} vocabularies. ` +
     `Every column names the document it was read from. Where a tool changes the meaning and not just the word, the cell says so.</p>`;
   wrap.appendChild(head);
   const t = el("table", "index dialects");

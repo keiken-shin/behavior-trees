@@ -161,7 +161,10 @@ SCENES["memory/modes"] = {
   world: "drone", scenario: "delivery",
   tree: PREEMPT.replace("? root", "? root {memory}"),
   steps: [
-    { say: "Root memory. The delivery is Running, and the root has put its finger on it.", to: 1 },
+    /* show: the nodes the caption is about, which the graph pans to when the
+       step lands. Only where the nodes a tick changed are not what the
+       caption names and a phone's window cannot hold both. */
+    { say: "Root memory. The delivery is Running, and the root has put its finger on it.", to: 1, show: ["n0", "n5"] },
     { say: "The battery dropped at tick {t}, and the check was not asked. The root resumed the delivery instead.", hazard: "battery12", to: (s, h) => s.battery < 30 && !last(h)?.trace.some((n) => n.id === "n2") },
     { say: "At tick {t} the battery hit zero with the check never asked again. That is what memory costs.", to: (s) => s.dead, cap: 900 },
   ],
@@ -181,7 +184,7 @@ SCENES["decorators/kinds"] = {
   world: "drone", scenario: "delivery",
   tree: KINDS,
   steps: [
-    { say: "Two rhombuses, each with exactly one child. Neither has had to rule yet.", to: 1 },
+    { say: "Two rhombuses, each with exactly one child. Neither has had to rule yet.", to: 1, show: ["n4", "n9"] },
     { say: "Parcel dropped at tick {t}. The flight home starts, under the timeout.", to: (s) => s.delivered, cap: 400 },
     { say: "A gust from the west. The flight home ran 200 ticks under the timeout; at tick {t} the timeout halted ReturnHome and answered Failure, so the delivery failed.", hazard: "gust", to: (s, h) => answered(h, "n9", "Failure"), cap: 2500 },
   ],

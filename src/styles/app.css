@@ -838,6 +838,12 @@ button { font: inherit; color: inherit; }
 .gv__stage { padding-top: 34px; }
 .gv__stage svg { display: block; width: 100%; height: auto; max-height: 400px; margin: 0 auto; cursor: grab; touch-action: none; }
 .gv__stage svg:active { cursor: grabbing; }
+/* The tree goes on past this edge: the view is a window on a wider tree, so
+   the cut side fades out rather than slicing a label with a hard edge. */
+.gv__stage svg { --fade-l: #000; --fade-r: #000;
+  mask-image: linear-gradient(to right, var(--fade-l), #000 16px, #000 calc(100% - 16px), var(--fade-r)); }
+.gv--cut-l svg { --fade-l: transparent; }
+.gv--cut-r svg { --fade-r: transparent; }
 .gv__tools { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; }
 .gv__tools button { font-family: var(--f-mono); font-size: 11px; padding: 3px 7px; background: var(--paper); color: var(--ink);
   border: var(--w-hair) solid var(--rule); cursor: pointer; }
