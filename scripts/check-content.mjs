@@ -33,12 +33,14 @@ const pass = (m) => console.log(`  pass  ${m}`);
 const spineless = [];
 for (const les of LESSONS) {
   const t = (k) => les.flow.some((b) => b.t === k);
-  const missing = ["concrete", "fig", "play", "myth", "check"].filter((k) => !t(k));
+  const missing = ["concrete", "myth", "check"].filter((k) => !t(k));
+  if (!t("scene") && !t("fig")) missing.push("scene or fig");
+  if (t("play")) missing.push("a play block, which no longer exists");
   if (missing.length) spineless.push(`${les.id} (no ${missing.join(", ")})`);
 }
 spineless.length
   ? fail(`chapters missing a spine block: ${spineless.join("; ")}`)
-  : pass(`all ${LESSONS.length} chapters carry concrete, figure, play, myth and check`);
+  : pass(`all ${LESSONS.length} chapters carry concrete, a scene or a figure, myth and check`);
 
 /* ── the sources rule: every myth and fact names a source that exists ───── */
 const unsourced = [], phantom = [], forum = [];
