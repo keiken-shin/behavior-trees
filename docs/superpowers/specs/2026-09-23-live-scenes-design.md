@@ -22,8 +22,9 @@ Where a paragraph names a moment, a live scene follows it and shows that moment 
 
 - One reading column, no bench, no right panel.
   The `.lesson` grid, the `bench`, `bench-wrap`, `fig-host` sticky logic and `mountFigure` in `src/ui/lesson.js` go.
-- Text keeps its reading width.
-  A scene breaks out wider than the text (up to the column's full width, about 880 px on a laptop) and is capped at 480 px tall, so it never fills the screen.
+- Text keeps its reading width and sits centred on the page, so the empty space of a wide monitor splits evenly to both sides.
+  A scene breaks out to the page's full width (the split screen of graph and map uses everything between the margins) and is capped at 480 px tall, so it never fills the screen.
+  Amended 2026-09-24 from a flush-left column with scenes capped at 880 px: the reader found the right side of a wide screen empty.
   On a narrow screen the two halves stack: graph above, world below, each capped at 300 px.
 - A `fig` block that survives (section 6) renders inline at the same width as a scene, with its step strip under it, where the flow places it.
 - Home, cards, dialects, sources and checkride pages change only to the one column width.

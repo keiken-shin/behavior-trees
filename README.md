@@ -112,7 +112,7 @@ The organising rule, from `content/visual-grammar.md`: **colour is an answer**.
 A node is coloured only by what it returned this tick - Success, Failure, or Running - and idle is paper.
 Shape carries kind instead of colour, straight from the textbook's own notation: Sequence a box with an arrow, Fallback a box with a question mark, Parallel a box with a double arrow, Decorator a rhombus, Action a rounded box, Condition an ellipse.
 A greyscale print still reads correctly, because kind never depends on colour.
-A chapter is one reading column: the text keeps its reading width, and a scene or a drawing sits inline where the text names its moment, a little wider than the text.
+A chapter is one reading column, centred: the text keeps its reading width, and a scene sits inline where the text names its moment, across the page's full width; a drawing sits centred under the text.
 On a laptop a scene's story fits in 480 px of height so it never fills the screen; on a phone its graph and its map stack.
 
 ## Roadmap

@@ -337,10 +337,10 @@ button { font: inherit; color: inherit; }
    Same furniture as the answer key, because it is the same kind of object - a
    list of things checked off, not a progress bar. Rows are buttons: each one
    is the way back to the thing it is asking for. */
-/* Held to the same 68ch measure as the text and the footer below it, so the
-   three share one right edge instead of the after-block reading as three
-   unrelated boxes. */
-.steps { border: var(--w-rule) solid var(--ink); margin-bottom: 26px; max-width: 68ch; }
+/* In the same middle track as the text and the footer below it, so the
+   three share one left and one right edge instead of the after-block reading
+   as three unrelated boxes. */
+.steps { border: var(--w-rule) solid var(--ink); margin-bottom: 26px; }
 .steps__cap {
   display: flex; justify-content: space-between; gap: 14px;
   padding: 8px 12px; background: var(--paper-sunk);
@@ -370,13 +370,20 @@ button { font: inherit; color: inherit; }
 .steps__row.done { color: var(--ink-3); }
 .steps__row.done .steps__k { border-color: var(--s-ok); }
 .steps__row .mk { color: var(--accent); }
-.col > *, .lesson__head > * { max-width: 68ch; }   /* body measure, per the craft floor */
-/* Breaks out past the text measure, up to a laptop's own width, and no
-   further - spec section 2 caps it "about 880 px" so it never turns into the
-   full viewport on a wide monitor. Flush with the text's own left edge, not
-   centred: the reading column is flush left, and a wide block centred in the
-   much wider `.col` box would share neither edge with the text it follows. */
-.col > .scene, .col > .figure-inline { max-width: 880px; }
+/* A centred reading column with full-width scenes: three tracks, the text in
+   the middle one at the body measure (68ch, per the craft floor), a scene
+   across all three so the split screen takes the whole page width. The empty
+   space on a wide monitor splits evenly to both sides instead of piling up on
+   the right of a flush-left column. Every text block fills the middle track,
+   so the title, the paragraphs, the concrete box, the steps box and the
+   footer share one left and one right edge. Only bottom margins are used
+   in this column (h1-h4 carry none, p carries 1.15em), so grid items losing
+   margin collapse changes no spacing. */
+.lesson__head, .col, .after { display: grid; grid-template-columns: 1fr min(68ch, 100%) 1fr; }
+.lesson__head > *, .col > *, .after > * { grid-column: 2; min-width: 0; }
+.col > .scene { grid-column: 1 / -1; }
+/* A drawing keeps its own width and sits centred under the text. */
+.col > .figure-inline { grid-column: 1 / -1; width: min(100%, 880px); justify-self: center; }
 
 .lesson__title { margin-bottom: .5em; }
 .lesson__sub { color: var(--ink-2); font-size: 19px; max-width: 40ch; margin-bottom: 2.4em; }
@@ -384,9 +391,6 @@ button { font: inherit; color: inherit; }
 /* The concrete anchor - the 5-year-old rung. A thin ruled box, which is this
    world's device for set-apart text; a thick coloured left bar is the generic
    callout the craft floor bans. */
-/* 68ch at its own 18 px would overhang the paragraphs' 68ch at 16.5 px; this
-   is their measure in its font, so the box shares the text's right edge. */
-.col > .concrete { max-width: calc(68ch * 16.5 / 18); }
 .concrete {
   border: var(--w-hair) solid var(--rule);
   padding: 17px 19px; margin: 0 0 2em;
@@ -619,12 +623,11 @@ button { font: inherit; color: inherit; }
 
 /* footer nav */
 /* Below the reading column, at the chapter's end: read it, fly its scenes,
-   then leave. Held to the same 68ch measure as the text and the steps box above
+   then leave. In the same middle track as the text and the steps box above
    it, so the after-block reads as one aligned column rather than three unrelated
    widths. It wraps rather than taking a minimum width: a floor would push it
    past that measure on middling screens, which is the misalignment being fixed. */
 .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px;
-        max-width: 68ch;
         padding-top: 22px; border-top: var(--w-rule) solid var(--ink); }
 .foot a { display: inline-flex; align-items: center; gap: 9px;
           text-decoration: none; padding: 13px 16px; border: var(--w-hair) solid var(--rule);
@@ -918,9 +921,10 @@ button { font: inherit; color: inherit; }
    scene's width. The board strip below both panes costs far less height than
    a third of a pane would, leaving the map the panes' full width. This value
    is measured (script, not by eye) against every story scene, at every step,
-   at 1280, 1440 and 1920 - see the report for the table; the three widths
-   give the same numbers because the scene's own width no longer grows with
-   the window past 880px. */
+   at 1280, 1440 and 1920 - see the report for the table. The scene now spans
+   the page, so a wider window widens the panes; the panes' height is capped
+   here, the map keeps its ratio inside that cap, and the board strip wraps
+   less, so the stage gets no taller as the window grows. */
 .scene .gv__stage svg { max-height: 250px; }
 .scene .pg__world svg { max-height: 250px; }
 @media (max-width: 1020px) {
