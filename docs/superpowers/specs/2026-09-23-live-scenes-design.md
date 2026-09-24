@@ -82,6 +82,15 @@ The sim is the same `start()` / `advance()` from `src/bt/run.js` the playground 
 
 `mountPlayground` stays and is what `mountScene` shows after the last step; the checkride keeps calling `mountPlayground` directly with no steps.
 
+Amended on 2026-09-24: the step strip is gone, because the user found a numbered carousel of stopped moments was not a live tree.
+A story is now one live run.
+Play, Step, Reset, the rate and the trace are in one bar from the start, and Play ticks the scene's own tree at the reader's rate (10 a second by default).
+The steps are moments the run passes through without stopping: each caption is added to a list under the bar when its moment lands, the newest in full ink.
+After the last moment the same run goes on and the hazards, variants, modes, editor and goal unlock.
+Reset restarts the story while it is still being told, and the reader's own tree after; a Replay story button tells it again on the scene's own tree.
+`storyCursor()` in `src/data/scenes.js` is the one loop both the playground and `runSteps()` tick, so the moments land on the same ticks as before.
+The walked edges stay drawn in the tick colour through a run, and draw in edge by edge only on a Step or at two ticks a second or slower, since a draw-in restarted every tick never finished.
+
 ## 5. The graph
 
 `src/play/tree-view.js` grows into `src/play/graph-view.js`, exporting `graphView(host) -> { render(spec), paint(entry), replay(history, i), fit(), destroy() }`.
@@ -145,6 +154,7 @@ A chapter's scene step is done when any of its scenes reaches its goal, or, for 
 ## 9. Error handling
 
 - A step that hits its cap shows "this did not happen within N ticks" in the caption line and enables next, so a reader is never stuck; the check makes this a build failure, so it should never ship.
+  (Amended on 2026-09-24: there is no next; the missed moment's line is added and the run goes on to the following one.)
 - A leaf that throws is captured by the interpreter as Failure with an error, as today; the graph shows the error on the node card.
 - The editor's parse errors show the line number, as today.
 - Route change stops the scene; a scene never runs offscreen.

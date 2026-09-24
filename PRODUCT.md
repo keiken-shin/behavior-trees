@@ -72,7 +72,7 @@ light/dark theming from a semantic token layer.
 travels to a second subject with content changes only.
 Twelve chapters, 2D only - the tree is an SVG drawing and the map is a top-down scene, not
 a Three.js sandbox.
-Each chapter is one reading column with a live scene inline where the text names its moment: the interpreter ticking the drone on a live graph of the tree, telling its story in steps first and then handing over the controls (the design chapter hands them over at once).
+Each chapter is one reading column with a live scene inline where the text names its moment: the interpreter ticking the drone on a live graph of the tree, telling its story first as one live run and then handing over the controls (the design chapter hands them over at once).
 Thirteen scenes in all: one in each chapter, and a second in the Parallel chapter.
 Three authored drawings survive, all in the design chapter, where no run can show the point.
 Text-only tree editing; drag-and-drop editing is out of scope.
@@ -98,8 +98,8 @@ received and is worth preserving.
 
 - `src/bt/tree.js` - the interpreter, about 150 lines, asserted tick for tick against the
   textbook's algorithms by `scripts/check-bt.mjs`
-- `src/data/scenes.js` - the thirteen scenes as data: each one's tree, its story steps and the moment each step waits for, and what unlocks after.
-- `scripts/check-scenes.mjs` - runs every scene headless and fails if a step's moment never comes, a caption is left with `{t}` unfilled, or an unlocked goal cannot be met.
+- `src/data/scenes.js` - the thirteen scenes as data: each one's tree, its story's moments and what each one waits for, and what unlocks after.
+- `scripts/check-scenes.mjs` - runs every scene headless and fails if a story moment never comes, a caption is left with `{t}` unfilled, or an unlocked goal cannot be met.
 - `src/data/diagrams.js` + `src/data/svg.js` - four figure builders (the three drawings in the design chapter plus the index tree) on a semantic primitive layer
 - `content/videos.json` - 128 candidates, 27 picked with a written note each, from 17
   channels, across all twelve chapters

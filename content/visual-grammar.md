@@ -44,7 +44,8 @@ Node outlines are line weight.
 
 A scene is the interpreter running: `src/bt/tree.js` ticking the drone world, not a drawing of it.
 Node colour is the answer this tick, and a node not asked this tick is paper.
-An edge pulse in the tick colour is the walk, drawn in the order the tick walked it.
+An edge in the tick colour is the walk: every edge the tick crossed stays drawn until the next tick, so a run shows its path live.
+With time to watch (a Step, or a run at two ticks a second or slower) each walked edge also draws itself in, in the order the tick walked it.
 A flash on a node is the halt: a heavy ink outline that fades, on a node that was Running and was not asked, or that the trace marks halted inside the tick.
 The flash is ink, not a status colour, because a halt is not an answer.
 A hatched ellipse is a condition that changed the world while answering.
@@ -54,6 +55,6 @@ Captions may name a tick only through `{t}`, which the run fills in; `scripts/ch
 The graph never starts smaller than reading size: when the whole tree would put a label under about 9 px, the view opens on the root at that size and the reader pans.
 A side where the tree goes on past the pane fades out instead of cutting a label.
 When a tick changes a node that is out of view, or halts one, the view pans to it without zooming.
-A story step can also name the nodes its caption is about, and when it lands the view pans to those instead.
+A story moment can also name the nodes its caption is about, and when it lands the view pans to those instead.
 The fit button shows the whole tree, at whatever size that takes.
-With reduced motion on, nothing pulses and nothing flashes; the colours still answer.
+With reduced motion on, nothing draws in and nothing flashes; the colours still answer and the walk is still drawn.
