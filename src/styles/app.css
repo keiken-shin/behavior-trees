@@ -382,8 +382,9 @@ button { font: inherit; color: inherit; }
 .lesson__head, .col, .after { display: grid; grid-template-columns: 1fr min(68ch, 100%) 1fr; }
 .lesson__head > *, .col > *, .after > * { grid-column: 2; min-width: 0; }
 .col > .scene { grid-column: 1 / -1; }
-/* A drawing keeps its own width and sits centred under the text. */
-.col > .figure-inline { grid-column: 1 / -1; width: min(100%, 880px); justify-self: center; }
+/* A drawing spans the page as a scene does; the drawing inside keeps its
+   own proportions (see .fig-host). */
+.col > .figure-inline { grid-column: 1 / -1; }
 
 .lesson__title { margin-bottom: .5em; }
 .lesson__sub { color: var(--ink-2); font-size: 19px; max-width: 40ch; margin-bottom: 2.4em; }
@@ -574,13 +575,16 @@ button { font: inherit; color: inherit; }
 
 /* ── an inline plate's drawing ────────────────────────────────────────── */
 
-.fig-host svg.figure { display: block; width: 100%; height: auto; }
-/* nav2/tree is the one plate wide enough (2904px) that shrinking it to the
-   column width put its 9px labels on screen at about 2px. It carries its own
-   width attribute instead of the usual 100%, and the host scrolls sideways to
-   it rather than the page ever growing wider than the viewport. */
-.fig-host:has(svg.figure--wide) { overflow-x: auto; }
-.fig-host svg.figure--wide { width: auto; max-width: none; height: auto; }
+/* The plate spans the page, and the drawing is centred in it at no more
+   than 520 px tall, so a whole plate, caption and steps included, fits a
+   laptop screen under the header. */
+.fig-host svg.figure { display: block; width: 100%; height: auto; max-height: 520px; }
+/* nav2/tree is the one plate wide enough (some 3900px) that shrinking it to
+   the page's width would put its labels under 4px. It sits at its real size
+   in the scene graph's pan and zoom window (pan-zoom.js), and its caption is a
+   line of text under the window instead of a line inside a drawing that pans. */
+.figure--wide .caption { display: none; }
+.fig-cap { max-width: 720px; margin: 0 auto; padding: 2px 16px 12px; font-size: 15px; color: var(--ink-2); text-align: center; text-wrap: balance; }
 
 .sheets {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 9px 12px;
@@ -846,12 +850,17 @@ button { font: inherit; color: inherit; }
 .gv__stage { padding-top: 34px; }
 .gv__stage svg { display: block; width: 100%; height: auto; max-height: 400px; margin: 0 auto; cursor: grab; touch-action: pan-y pinch-zoom; }
 .gv__stage svg:active { cursor: grabbing; }
-/* The tree goes on past this edge: the view is a window on a wider tree, so
-   the cut side fades out rather than slicing a label with a hard edge. */
-.gv__stage svg { --fade-l: #000; --fade-r: #000;
-  mask-image: linear-gradient(to right, var(--fade-l), #000 16px, #000 calc(100% - 16px), var(--fade-r)); }
+/* The tree goes on past this edge: the view is a window on a bigger tree, so
+   the cut side fades out rather than slicing a label with a hard edge. The
+   two gradients meet, so a corner cut both ways fades both ways. */
+.gv__stage svg { --fade-l: #000; --fade-r: #000; --fade-t: #000; --fade-b: #000;
+  mask-image: linear-gradient(to right, var(--fade-l), #000 16px, #000 calc(100% - 16px), var(--fade-r)),
+              linear-gradient(to bottom, var(--fade-t), #000 16px, #000 calc(100% - 16px), var(--fade-b));
+  mask-composite: intersect; }
 .gv--cut-l svg { --fade-l: transparent; }
 .gv--cut-r svg { --fade-r: transparent; }
+.gv--cut-t svg { --fade-t: transparent; }
+.gv--cut-b svg { --fade-b: transparent; }
 .gv__tools { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; }
 .gv__tools button { font-family: var(--f-mono); font-size: 11px; padding: 3px 7px; background: var(--paper); color: var(--ink);
   border: var(--w-hair) solid var(--rule); cursor: pointer; }

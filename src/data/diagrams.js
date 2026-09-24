@@ -57,14 +57,13 @@ D["design/backchain"] = () => {
 
 D["nav2/tree"] = () => {
   const spec = nav2ToSpec(NAV2);
-  /* Not squeezed into 800 any more. The squeeze was what made this plate
-     unreadable: 74px boxes holding labels up to 204px. Here every node is wide
-     enough for its own name, on two lines where one will not do, and the frame
-     is as wide as the tree really is. An SVG scales to whatever column it is
-     given, so the old fit scale only ever bought a smaller drawing of the same
-     collision. */
-  const small = { maxW: 120, fs: 9, nodeH: 22, hGap: 4, vGap: 34, labelClass: "node-t--xs", twoLine: true };
-  const L = layout(spec, small);
+  /* The scene graph's own sizes: 12 px labels on one line, every node as wide
+     as its own name, and a scene's gaps between them. The plate is shown at
+     its real size in a pan and zoom window, so nothing here is squeezed to fit
+     a column: the old 9 px labels broken onto two lines in 22 px boxes, 4 px
+     apart, were too tight to read. */
+  const size = { maxW: 280, nodeH: 34, hGap: 16, vGap: 44 };
+  const L = layout(spec, size);
   /* 20 of margin each side, and enough below the deepest row for the note to
      clear both the last row of boxes and the caption band. */
   const W = Math.round(L.w) + 40, H = Math.round(L.h) + 110;
@@ -72,18 +71,28 @@ D["nav2/tree"] = () => {
     title: "The default Nav2 navigation tree, drawn from its own XML file",
     desc: "The ROS 2 Nav2 navigate to pose tree with replanning and recovery, every node drawn from the project's XML. Its custom control nodes are double ruled boxes because this course does not run them.",
     captions: [
-      "A production tree, node for node, from content/nav2.xml. The labels are small on purpose: this plate is about the shape. The file is on the sources page.",
+      "A production tree, node for node, from content/nav2.xml. Drag it to follow a branch, or press fit to see its whole shape. The file is on the sources page.",
       "Double ruled boxes are Nav2's own control nodes: RecoveryNode, PipelineSequence, RoundRobin. Their rules are in the Nav2 documentation, not in this course's interpreter.",
     ],
     states: [
-      tree(spec, { x: 20, y: 20, ...small }),
+      tree(spec, { x: 20, y: 20, ...size }),
       note(W / 2, H - 80, "drawn, not executed"),
     ],
     vb: `0 0 ${W} ${H}`,
-    /* 2904px wide scaled into a 693px column puts a 9px label on screen at
-       about 2px. This plate is the one that actually needs its real size, so
-       it is the only one that scrolls sideways instead of shrinking. */
-    wide: true,
+    /* Some 3900px wide, so shrunk into a page's width its labels would be
+       under 4px. This plate is the one that actually needs its real size, so
+       it is the only one shown in a pan and zoom window instead of
+       shrinking. The window stops 60 under the frame's foot, just past the
+       note: the band below is the caption's, and the caption is shown under
+       the window instead. The note's foot is the drawing's lowest edge. */
+    wide: {
+      h: H - 60,
+      root: 20 + L.nodes[0].x,
+      left: 20 + Math.min(...L.nodes.map((d) => d.x - d.w / 2)),
+      right: 20 + Math.max(...L.nodes.map((d) => d.x + d.w / 2)),
+      top: 20 + Math.min(...L.nodes.map((d) => d.y - d.h / 2)),
+      bottom: H - 76,
+    },
   });
 };
 

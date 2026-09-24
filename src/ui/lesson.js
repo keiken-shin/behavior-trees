@@ -7,6 +7,7 @@ import { openPlayer, closePlayer } from "./player.js";
 import { sceneConfig } from "../data/scenes.js";
 import SOURCE_FILE from "../../content/sources.json";
 import { mountPlayground } from "../play/playground.js";
+import { panZoom, TOOLS } from "../play/pan-zoom.js";
 
 /* Drawn, like every other mark here. A tick and a cross as stroked paths hold
    their contrast against paper in either plate, where a coloured letter on a
@@ -47,8 +48,9 @@ export function renderLesson(root, id) {
   const wrap = el("div", "lesson");
   const col = el("div", "col");
 
-  /* One figure, inline, and the step strip over it. A narrow screen and a wide
-     one now render the same markup - there is no bench left to differ from. */
+  /* One figure, inline, and the step strip under it. A narrow screen and a wide
+     one now render the same markup - there is no bench left to differ from.
+     Returns the figure's teardown, or nothing when it has none. */
   function mountFigure(host, figId, plateName) {
     host.innerHTML = `<div class="fig-host">${DIAGRAMS[figId]()}</div><div class="sheets"></div>`;
     const svg = host.querySelector("svg");
@@ -57,11 +59,27 @@ export function renderLesson(root, id) {
     const label = el("span", "sheets__lab", "");
     strip.appendChild(label);
     const btns = [];
+    /* The one plate too wide for its column (Nav2) is shown at its real size
+       in the same pan and zoom window as a scene's graph, opened on the root.
+       Its caption leaves the drawing for a line under the window: inside, it
+       sat at the middle of the whole frame, off the screen, and would pan
+       away with the tree. */
+    let cap = null, vp = null;
+    if (svg.classList.contains("figure--wide")) {
+      const fh = host.querySelector(".fig-host");
+      svg.remove();
+      fh.innerHTML = `<div class="gv"><div class="gv__stage" tabindex="0" role="group" aria-label="${plateName}: drag, or use the arrow keys, to move around the drawing"></div>${TOOLS}</div><p class="fig-cap" aria-live="polite"></p>`;
+      fh.querySelector(".gv__stage").appendChild(svg);
+      cap = fh.querySelector(".fig-cap");
+      vp = panZoom(fh.querySelector(".gv__stage"), fh.querySelector(".gv__tools"), { minScale: 1 });
+      const d = Object.fromEntries(Object.entries(svg.dataset).map(([key, v]) => [key, Number(v)]));
+      vp.set(svg, { ...d, w: Number(svg.getAttribute("viewBox").split(/\s+/)[2]) });
+    }
     /* The strip has to SAY it is steppable. Driving the build off scroll instead
        looked clever and failed on the content: a chapter is ~330 words, so a
        section passes in a couple of flicks and four steps blur past with no
        chance to read any of them. Clicking is the reader's own clock. */
-    const c = { svg, total, label, btns, plate: plateName, at: 0 };
+    const c = { svg, total, label, btns, cap, plate: plateName, at: 0 };
     if (total > 1) {
       for (let n = 1; n <= total; n++) {
         const b = el("button", "", String(n));
@@ -77,6 +95,7 @@ export function renderLesson(root, id) {
        finished drawing, so the finished drawing is what has to be there; the
        tabs replay how it got that way. */
     setStepOn(c, total);
+    return vp ? () => vp.destroy() : null;
   }
 
   function setStepOn(c, n) {
@@ -85,6 +104,7 @@ export function renderLesson(root, id) {
     c.at = v;
     c.svg.setAttribute("data-state", String(v));
     c.label.textContent = `${c.plate} · Step ${v} of ${c.total}`;
+    if (c.cap) c.cap.textContent = c.svg.querySelector(`.cap${v}`)?.textContent ?? "";
     c.btns.forEach((x, j) => {
       const n1 = j + 1;
       x.setAttribute("aria-pressed", n1 === v ? "true" : "false");
@@ -134,7 +154,8 @@ export function renderLesson(root, id) {
           `<span class="t-label">Fig. ${i + 1}-${figSeen}</span><span class="figref__rule"></span>`));
         const plate = el("div", "figref__plate");
         node.appendChild(plate);
-        mountFigure(plate, b.id, `Fig. ${i + 1}-${figSeen}`);
+        const stop = mountFigure(plate, b.id, `Fig. ${i + 1}-${figSeen}`);
+        if (stop) { const prev = teardown; teardown = () => { stop(); prev?.(); }; }
         break;
       }
 

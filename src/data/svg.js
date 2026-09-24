@@ -120,19 +120,18 @@ function defs() {
 
 /* Progressive build (§4.2): all states share one viewBox and one set of
    positions; later states only add. */
-function figure({ title, desc, states = [], captions = [], vb = `0 0 ${VB_W} ${VB_H}`, wide = false }) {
+function figure({ title, desc, states = [], captions = [], vb = `0 0 ${VB_W} ${VB_H}`, wide = null }) {
   // Captions sit on the box the figure actually uses, not on a hardcoded 800x500.
   const [, , vw, vh] = vb.split(/\s+/).map(Number);
   const body = states.map((sBody, i) => `<g class="s${i + 1}">${sBody}</g>`).join("");
   const caps = captions.map((c, i) =>
     `<text class="cap cap${i + 1}" x="${n(vw / 2)}" y="${n(vh - 30)}">${esc(c)}</text>`).join("");
   /* wide: for a plate whose labels only read at their real size (Nav2), not
-     scaled down to fit a column. An explicit width attribute, in the same
-     units as the viewBox, is what lets app.css's `width: auto` on
-     figure--wide render the svg at that real size instead of the usual 100%;
-     the host then scrolls to it sideways rather than the page ever growing
-     wider than the viewport. */
-  const wattr = wide ? ` width="${n(vw)}"` : "";
+     scaled down to fit a column. The chapter shows it in a pan and zoom
+     window (src/play/pan-zoom.js) opened on the root, so it carries the
+     root's x, the drawing's outermost edges, and the height the window
+     shows, as { root, left, right, top, bottom, h } in viewBox units. */
+  const wattr = wide ? Object.entries(wide).map(([key, v]) => ` data-${key}="${n(v)}"`).join("") : "";
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}"${wattr} class="figure${wide ? " figure--wide" : ""}" data-state="${states.length}"
     role="img" aria-label="${esc(title)}"><title>${esc(title)}</title><desc>${esc(desc)}</desc>
     ${defs()}${body}<g class="caption">${caps}</g></svg>`;
