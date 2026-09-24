@@ -27,6 +27,7 @@ A greyscale print must still read, which it does, because kind never depends on 
 Every tree on a plate is written in the text form and laid out by `src/bt/layout.js`, the same code the scenes use.
 A plate can therefore never show a shape a scene would draw differently.
 Each node is as wide as its own label needs, between a floor and a ceiling, so a short label never pays for the longest one.
+A plate too wide to read at the page's width (the Nav2 tree) is never shrunk or squeezed: it is drawn with a scene graph's node sizes and keeps its real size in the scene graph's pan and zoom window, opened on its root, and its caption moves under the window.
 
 ## 4. Progressive states
 

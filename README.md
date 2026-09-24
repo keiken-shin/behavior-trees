@@ -28,7 +28,8 @@ This sits in the gap: twelve chapters, each with a real interpreter ticking a re
   The trace slider replays the stored ticks.
   The design chapter's scene hands over the whole mission at once, with the editor open.
 - **Three authored SVG drawings**, all in the design chapter, where no run can show the point: backward chaining, the real Nav2 tree drawn from its own XML, and where the tree sits above the autopilot.
-  They are drawn by `src/data/diagrams.js` on the same layout engine the scenes use, as is the course tree on the index page
+  They are drawn by `src/data/diagrams.js` on the same layout engine the scenes use, as is the course tree on the index page.
+  The Nav2 tree is drawn with a scene graph's node sizes and is far wider than a page, so it sits at its real size in the same pan and zoom window as a scene's graph, opened on its root, with its caption under the window.
 - **A typed checkride** - five items, each judged by the same interpreter the lessons run, with a reference tree that passes and a misconception tree that the judge is asserted to fail
 - **An interpreter of about 150 lines**, `src/bt/tree.js`, asserted tick for tick against the textbook's algorithms by `scripts/check-bt.mjs`
 - **No framework, no backend, no accounts, no 3D.**
@@ -86,7 +87,7 @@ Copy `.env.example` to `.env` if you want it.
 src/
   bt/       tree.js (the interpreter) · parse.js (the text form) · layout.js · run.js
   world/    drone.js: kinematics, leaves, hazards, draw
-  play/     playground.js (a scene: the story, then the controls) · graph-view.js (the live tree, painted from the trace)
+  play/     playground.js (a scene: the story, then the controls) · graph-view.js (the live tree, painted from the trace) · pan-zoom.js (the pan and zoom window the graph and the wide plate share)
   data/     lessons, scenes, diagrams (the three drawings and the index tree), exam (the checkride), videos, svg primitives, the deck
   ui/       home · lesson · cards · checkride · dialects · credits · player · steps · logo
   styles/   tokens.css (semantic colour) · app.css
@@ -113,7 +114,7 @@ The organising rule, from `content/visual-grammar.md`: **colour is an answer**.
 A node is coloured only by what it returned this tick - Success, Failure, or Running - and idle is paper.
 Shape carries kind instead of colour, straight from the textbook's own notation: Sequence a box with an arrow, Fallback a box with a question mark, Parallel a box with a double arrow, Decorator a rhombus, Action a rounded box, Condition an ellipse.
 A greyscale print still reads correctly, because kind never depends on colour.
-A chapter is one reading column, centred: the text keeps its reading width, and a scene sits inline where the text names its moment, across the page's full width; a drawing sits centred under the text.
+A chapter is one reading column, centred: the text keeps its reading width, and a scene sits inline where the text names its moment, across the page's full width; a drawing spans the page the same way, centred in its plate.
 On a laptop a scene's story fits in 480 px of height so it never fills the screen; on a phone its graph and its map stack.
 
 ## Roadmap
