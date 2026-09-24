@@ -2,11 +2,12 @@
    playground and the check share, so the story a reader watches is the story
    the build proved.
 
-   A step runs the sim until `to` is met: a tick number, or a predicate on
-   (state, history). `hazard` is applied on the step's first tick through
-   advance(), never by a direct call. `say` is the caption, with {t} for the
-   tick the step stopped at. `then` is the unlocked stage: the playground's own
-   configuration, so the plays of version one are carried over here, revised:
+   A step is a moment the story's run passes through, without stopping: it
+   lands when `to` is met, a tick number or a predicate on (state, history).
+   `hazard` is applied on the step's first tick through advance(), never by a
+   direct call. `say` is the caption, with {t} for the tick the moment landed
+   on. `then` is the unlocked stage: the playground's own configuration, so
+   the plays of version one are carried over here, revised:
    some ids, trees and goals changed, and captions replace what used to be
    prose in `then.brief`/`then.goal.done`. */
 import { start, advance, switchCount } from "../bt/run.js";
@@ -28,33 +29,49 @@ export function sceneConfig(id) {
            steps: sc.steps, ...(sc.then ?? {}), brief: sc.then?.brief ?? "" };
 }
 
-/* One tick of one step: the hazard lands on the first tick only (Task 1's
-   rule - a hazard step always ticks at least once, to actually apply it),
-   every other tick is a plain advance(). The playground and runSteps() both
-   call this, so the walk a reader watches and the walk the check proved are
-   the same loop, not two that happen to agree today. */
-export function stepTick(sim, step, first) {
-  const hz = first && step.hazard ? sim.world.hazards.find((h) => h.id === step.hazard) : undefined;
-  advance(sim, hz);
-  return stepDone(sim, step);
+/* The story as one run that never stops: the steps are moments it passes
+   through, not places it waits. start() and tick() return the moments that
+   landed ({ i, t, ok }). A step's hazard lands on its first tick, so a hazard
+   step always ticks at least once; a moment already true when its turn comes
+   lands on the same tick as the one before it, unless it is a tick number or
+   carries a hazard. A moment that misses its cap lands with ok false. The
+   playground ticks this live and runSteps() ticks it headlessly, so the run a
+   reader watches and the run the check proved are the same loop. */
+export function storyCursor(steps) {
+  let at = 0, first = true, cap = 0;
+  const settle = (sim, out) => {
+    while (at < steps.length) {
+      const s = steps[at];
+      cap = sim.t + (s.cap ?? 600);
+      if (s.hazard || typeof s.to === "number" || !stepDone(sim, s)) break;
+      out.push({ i: at++, t: sim.t, ok: true });
+    }
+    return out;
+  };
+  return {
+    get done() { return at >= steps.length; },
+    start: (sim) => settle(sim, []),
+    tick(sim) {
+      const s = steps[at];
+      advance(sim, first && s.hazard ? sim.world.hazards.find((h) => h.id === s.hazard) : undefined);
+      first = false;
+      const ok = stepDone(sim, s);
+      if (!ok && sim.t < cap) return [];
+      first = true;
+      return settle(sim, [{ i: at++, t: sim.t, ok }]);
+    },
+  };
 }
 
-/* Headless: the same loop the playground animates. */
+/* Headless: the same loop the playground plays. */
 export function runSteps(sc) {
   const world = WORLDS[sc.world];
   const W = { ...world, leaves: { ...world.leaves, ...(sc.extraLeaves ?? {}) } };
   const sim = start({ world: W, scenario: sc.scenario, tree: sc.tree });
   sc.start?.(sim.state);
-  const stops = [];
-  sc.steps.forEach((step, i) => {
-    const cap = sim.t + (step.cap ?? 600);
-    let first = true, ok = !step.hazard && stepDone(sim, step) && typeof step.to !== "number";
-    while (!ok && sim.t < cap) {
-      ok = stepTick(sim, step, first);
-      first = false;
-    }
-    stops.push({ i, t: sim.t, ok });
-  });
+  const cur = storyCursor(sc.steps);
+  const stops = cur.start(sim);
+  while (!cur.done) stops.push(...cur.tick(sim));
   return { sim, stops };
 }
 

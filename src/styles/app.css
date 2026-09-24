@@ -799,17 +799,18 @@ button { font: inherit; color: inherit; }
 /* ── the playground ──────────────────────────────────────────────────────── */
 .pg { padding: 12px; }
 .pg__brief { margin: 0 0 12px; color: var(--ink-2); }
-.pg__story + .pg__brief { margin: 10px 0 0; }   /* a scene's brief, under its step strip */
+.pg__say ~ .pg__brief { margin: 10px 0 0; }   /* a scene's brief, under its moments */
 .pg__panes { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; align-items: start; }
 .pg__tree svg { width: 100%; height: auto; }
 .pg__bar, .pg__switches, .pg__hazards { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+.pg__switches:empty, .pg__hazards:empty { display: none; }   /* a scene with no variants or hazards leaves no gap */
 .pg button { font-family: var(--f-mono); font-size: 12px; padding: 6px 10px; background: var(--paper); color: var(--ink);
   border: var(--w-rule) solid var(--ink); border-radius: 0; cursor: pointer; }
 .pg button:hover { background: var(--paper-sunk); }
 .pg .pg__var.on { background: var(--ink); color: var(--paper); }
 .pg__rate, .pg__mode { font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); display: inline-flex; gap: 6px; align-items: center; }
 .pg__rate input { width: 90px; accent-color: var(--accent); }
-.pg__tick, .pg__count { font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); margin-left: auto; }
+.pg__tick, .pg__count { font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); margin-left: auto; padding-left: 8px; }
 .pg__tick i { font-style: normal; color: var(--ink); }
 .pg__goal { margin-top: 12px; padding: 8px 10px; border: var(--w-rule) solid var(--s-ok); font-size: 14px; }
 .pg__world svg { width: 100%; height: auto; }
@@ -864,9 +865,11 @@ button { font: inherit; color: inherit; }
 .gv .gv__close { position: absolute; top: 4px; right: 4px; padding: 2px 6px; font-size: 11px; line-height: 1;
   border: 0; background: none; font-family: var(--f-mono); cursor: pointer; color: var(--ink-3); }
 .tree-live .node.picked rect, .tree-live .node.picked ellipse, .tree-live .node.picked polygon { stroke-width: 2.5; }
-/* The walk: each edge the tick crossed draws itself once, in order. The
-   dash is the tick pulse colour, because a pulse is the tick, not an answer. */
-.tree-live line.pulse { stroke: var(--s-tick); stroke-width: 2; stroke-dasharray: var(--len); stroke-dashoffset: var(--len);
+/* The walk: each edge the tick crossed, in the tick pulse colour, because a
+   pulse is the tick, not an answer. With time to watch (a Step, a slow run)
+   each one also draws itself once, in order. */
+.tree-live line.walk { stroke: var(--s-tick); stroke-width: 2; }
+.tree-live line.pulse { stroke-dasharray: var(--len); stroke-dashoffset: var(--len);
   animation: gv-walk 260ms linear forwards; }
 @keyframes gv-walk { to { stroke-dashoffset: 0; } }
 /* The halt: a node that was Running last tick and was not asked this tick.
@@ -893,18 +896,22 @@ button { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) { .pg__tree svg * { transition: none; } }
 
 /* ── a scene's story ────────────────────────────────────────────────────── */
-.pg--story .pg__brief, .pg--story .pg__bar, .pg--story .pg__switches, .pg--story .pg__hazards, .pg--story .pg__edit, .pg--story .pg__goal { display: none; }
-.pg__story { margin-top: 12px; }
-.pg__steps { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.pg__stepbtn[data-at="done"] { background: var(--ink); color: var(--paper); }
-.pg__stepbtn[data-at="now"] { border-width: 2px; }
-.pg__next { margin-left: 6px; }
-.pg__skip { border-style: dashed; }
-/* Reserves two lines, not one: a long caption that wraps to a second line
-   must not grow the story stage past what was budgeted for it. */
-.pg__say { margin: 10px 0 0; font-size: 15px; line-height: 1.5; min-height: 3em; }
-.pg__scrub { display: flex; align-items: center; gap: 8px; margin-top: 8px;
-  font-family: var(--f-mono); font-size: 11px; color: var(--ink-3); }
+/* The controls stay: the story is played, not paged. What waits for its last
+   moment is everything that could change the run it is telling. */
+.pg--story .pg__brief, .pg--story .pg__switches, .pg--story .pg__hazards, .pg--story .pg__edit, .pg--story .pg__goal { display: none; }
+/* The moments told so far, oldest first. The newest reads in full ink, the
+   ones before it step back, so the eye lands on what just happened. */
+.pg__say { list-style: none; margin: 10px 0 0; padding: 0; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+.pg__say:empty { display: none; }
+.pg__say li + li { margin-top: 4px; }
+.pg__say li:last-child { color: var(--ink); }
+.pg .pg__retell { margin-top: 10px; border-style: dashed; }
+/* The trace is the bar's timeline, so it takes the room the buttons leave.
+   The extra space either side of it is a right margin, which a wrapped line
+   on a phone hides at its end, so the wrapped lines still start flush. */
+.pg .pg__reset, .pg__scrub { margin-right: 8px; }
+.pg__scrub { display: flex; flex: 1 1 160px; align-items: center; gap: 8px;
+  font-family: var(--f-mono); font-size: 12px; color: var(--ink-2); }
 .pg__scrub input { flex: 1; accent-color: var(--accent); }
 .pg__scrub input:disabled { opacity: .4; }
 

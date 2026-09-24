@@ -1,26 +1,28 @@
 /* Two panes: the graph, repainted every tick, and the world beside it. With
-   `cfg.steps` the playground first tells a story: each step runs the sim to
-   its moment at 20 ticks a second (or at once, with skip), stops, and shows
-   its caption. After the last step the controls unlock: Step, Play, rate,
-   Reset (the current tree again from tick 0, still unlocked), hazards,
-   variants, modes, the editor, the goal. Without steps it is
+   `cfg.steps` the playground first tells a story, as one live run: Play (or
+   Step) ticks the scene's own tree, the graph and the map move together, and
+   each step is a moment the run passes through without stopping, its caption
+   added to the list under the controls as it lands. After the last moment
+   the same run goes on and the rest unlocks: hazards, variants, modes, the
+   editor, the goal. Reset starts the current tree again from tick 0: the
+   story again while it is still being told, the reader's own tree after.
+   "Replay story" tells it again on the scene's own tree. Without steps it is
    unlocked from the start, which is what the checkride uses.
 
    Nothing here knows it is a drone: `cfg.world` names a WORLDS entry and
-   everything comes off that object. Nothing here decides a step's stop either:
-   stepDone() and stepTick() are shared with the check that proved every step
-   happens, so the walk a reader watches is the walk the build proved. */
+   everything comes off that object. Nothing here decides a moment either:
+   storyCursor() is shared with the check that proved every moment happens,
+   so the run a reader watches is the run the build proved. */
 import { start, advance, switchCount } from "../bt/run.js";
 import { parse, format, ParseError } from "../bt/parse.js";
 import { WORLDS } from "../world/index.js";
-import { stepDone, stepTick, fill } from "../data/scenes.js";
+import { storyCursor, fill } from "../data/scenes.js";
 import { graphView } from "./graph-view.js";
 import { el } from "../ui/util.js";
 import { esc } from "../data/svg.js";
 
 const RATES = [1, 2, 5, 10, 30, 60];   // ticks per second on the slider
-const STORY_RATE = 20;
-const REDUCED = matchMedia("(prefers-reduced-motion: reduce)");
+const WATCH = 2;                        // up to this rate a run has time to draw each tick's walk in
 
 export function mountPlayground(host, cfg, { onDone } = {}) {
   const world = WORLDS[cfg.world];
@@ -31,16 +33,15 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
      world without ticking, and painting "Idle" there would put a status on the
      screen that the interpreter never returned. */
   let text = cfg.tree, sim = null, timer = null, rate = 10, done = false, lastStatus = null;
-  let at = 0;                       // steps completed so far
-  let story = steps.length > 0;     // locked until the last step has run
-  let stepState = null;             // { rawTick, cap, finish } while a story step's own interval is live
+  let story = false;                // the run is the scene's story: locked until its last moment lands
+  let cursor = null;                // the story's place in its steps, while story is true
 
-  /* A scene's brief sits under its step strip, so the brief appearing at
+  /* A scene's brief sits under its moments, so the brief appearing at
      unlock moves nothing above the graph. The checkride's playground has no
      steps, and its brief is the task, so there it leads. */
   const brief = cfg.brief ? `<p class="pg__brief">${cfg.brief}</p>` : "";
   host.innerHTML =
-    `<div class="pg${story ? " pg--story" : ""}">` +
+    `<div class="pg">` +
       (steps.length ? "" : brief) +
       /* The map gets the whole world pane - putting the board beside it (round
          2) squeezed the map to a fifth of the scene's own width, too narrow to
@@ -50,16 +51,18 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
          the blackboard chapter's steps read it. */
       `<div class="pg__panes"><div class="pg__tree"></div><div class="pg__world"></div></div>` +
       `<div class="pg__board"><p class="pg__bb"></p><p class="pg__log"></p></div>` +
-      `<label class="pg__scrub">trace at tick <b>0</b> <input type="range" name="trace" min="0" max="0" value="0" aria-label="trace at tick"></label>` +
-      (steps.length ? `<div class="pg__story"><div class="pg__steps"></div><p class="pg__say" aria-live="polite"></p></div>` + brief : "") +
+      /* One bar, like a player's: the controls, the trace as its timeline,
+         the rate, and the tick readout, which the trace moves too. */
       `<div class="pg__bar">` +
-        `<button class="pg__step" type="button">Step</button>` +
         `<button class="pg__play" type="button">Play</button>` +
+        `<button class="pg__step" type="button">Step</button>` +
         `<button class="pg__reset" type="button">Reset</button>` +
+        `<label class="pg__scrub">trace <input type="range" name="trace" min="0" max="0" value="0" aria-label="trace at tick"></label>` +
         `<label class="pg__rate">rate <input type="range" name="rate" min="0" max="${RATES.length - 1}" value="3"><b>10</b> ticks/s</label>` +
         `<span class="pg__tick">tick <b>0</b> · root <i>Idle</i></span>` +
         (cfg.counter ? `<span class="pg__count">switches <b>0</b></span>` : "") +
       `</div>` +
+      (steps.length ? `<ol class="pg__say" aria-live="polite"></ol><button class="pg__retell" type="button" hidden>Replay story</button>` + brief : "") +
       `<div class="pg__switches"></div>` +
       `<div class="pg__hazards"></div>` +
       `<div class="pg__goal" hidden></div>` +
@@ -70,31 +73,41 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   const view = graphView(q(".pg__tree"));
 
   /* ── the sim ── */
-  function boot() {
+  /* The current tree from tick 0. With `tell` it is the story: locked, its
+     moments cleared, and the cursor at the first. Without, it is the reader's
+     own run, unlocked, and the moments already told stay on the page. A
+     variant, a mode and an applied edit all boot without; the story is told
+     only on the scene's own tree (see resetToScene). */
+  function boot(tell) {
     stop();
     try { sim = start({ world: W, scenario: cfg.scenario, tree: text }); }
     catch (e) { showErr(e); return; }
     showErr(null);
     cfg.start?.(sim.state);
     view.render(sim.spec, sim.bt);
-    lastStatus = null; done = false; at = 0; story = steps.length > 0;
+    lastStatus = null; done = false;
+    story = tell && steps.length > 0;
     pg.classList.toggle("pg--story", story);
+    if (story) { say.textContent = ""; cursor = storyCursor(steps); }
+    if (retell) retell.hidden = story;
     if (cfg.counter) q(".pg__count b").textContent = "0";
     const g = q(".pg__goal"); if (g) { g.hidden = true; g.textContent = ""; }
     paintWorld(null);
     paintScrub();
-    paintStory();
-  }
-  /* Boot the current tree unlocked: the reader's own run, from tick 0. Reset,
-     a variant, a mode and an applied edit all land here; the story was told on
-     the scene's own tree and is re-told only from a step button. */
-  function bootFree() {
-    boot();
-    story = false; pg.classList.remove("pg--story"); at = steps.length; paintStory();
+    if (story) cursor.start(sim).forEach(land);
   }
   function showErr(e) {
     const p = q(".pg__err"); if (!p) { if (e) console.error(e); return; }
     p.hidden = !e; p.textContent = e ? e.message : "";
+  }
+  /* One tick, from Play or Step: the story's next tick while it is being
+     told, a free tick after. */
+  function tick() {
+    if (!sim) return;
+    if (!story) return oneTick();
+    const landed = cursor.tick(sim);
+    paintAfterTick();
+    landed.forEach(land);
   }
   function oneTick(hazard) {
     if (!sim) return;
@@ -103,17 +116,17 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
     advance(sim, hazard);
     paintAfterTick();
   }
-  /* The paint half of a tick, shared by free play (oneTick, above) and a
-     story step (runStep, below): both push one entry onto sim.history before
-     calling this, so it always reads the tick that just happened off the
-     live sim rather than being handed a status to paint. */
+  /* The paint half of a tick, shared by free play (oneTick) and the story
+     (tick): both push one entry onto sim.history before calling this, so it
+     always reads the tick that just happened off the live sim rather than
+     being handed a status to paint. */
   function paintAfterTick() {
     const last = sim.history[sim.history.length - 1];
     /* The halt flash is a diff against the tick before this one, not against
-       whatever graph-view last painted: since a skip paints only the tick it
-       lands on, that could be many ticks back and would flash (or miss) a
-       halt the interpreter never had, or missed one it did. */
-    view.paint({ t: last.t, status: last.status, trace: last.trace }, sim.history[sim.history.length - 2] ?? { trace: [] });
+       whatever graph-view last painted: after a drag on the trace that is a
+       tick many ticks back, and would flash a halt the interpreter never
+       had, or miss one it did. */
+    view.paint({ t: last.t, status: last.status, trace: last.trace }, sim.history[sim.history.length - 2] ?? { trace: [] }, false, !timer || rate <= WATCH);
     lastStatus = last.status;
     if (cfg.counter) q(".pg__count b").textContent = String(switchCount(sim.history, sim.bt.root.children.map((c) => c.id)));
     paintWorld(last.status);
@@ -141,23 +154,21 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   function paintScrub() {
     const r = q(".pg__scrub input"); const n = sim.history.length;
     r.max = String(Math.max(0, n - 1)); r.value = String(Math.max(0, n - 1)); r.disabled = n < 2;
-    q(".pg__scrub b").textContent = String(sim.t);
   }
   q(".pg__scrub input").oninput = (e) => {
     if (!sim) return;
     const i = Number(e.target.value);
     if (!sim.history[i]) return;
     view.replay(sim.history, i);
-    q(".pg__scrub b").textContent = String(sim.history[i].t);
     q(".pg__tick b").textContent = String(sim.history[i].t);
     q(".pg__tick i").textContent = sim.history[i].status;
   };
 
-  /* Back to the scene's own tree: the story it is about to (re)tell is the
+  /* Back to the scene's own tree: the story it is about to tell again is the
      one the build proved for cfg.tree, not for whatever variant, mode or
-     edit the reader last chose. Every step button calls this before
-     rebooting, so the reader can never watch a step's real caption land on a
-     tree that never earned it. */
+     edit the reader last chose. Replay story calls this before booting, so
+     the reader can never watch a moment's real caption land on a tree that
+     never earned it. */
   function resetToScene() {
     text = cfg.tree;
     sw.querySelectorAll(".pg__var").forEach((x, i) => x.classList.toggle("on", i === 0));
@@ -167,124 +178,46 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
   }
 
   /* ── the story ── */
-  /* The strip is built once and repainted in place, so the button a keyboard
-     reader pressed keeps focus from step to step. */
-  const stepBtns = steps.map((s, i) => {
-    const b = el("button", "pg__stepbtn", String(i + 1)); b.type = "button";
-    b.setAttribute("aria-label", `step ${i + 1} of ${steps.length}`);
-    /* The step now animating is finished where it is, never started again:
-       a second runStep would apply its hazard a second time (see finishNow). */
-    b.onclick = () => { if (!sim) return; if (i === at && finishNow()) return; runTo(i, i <= at); };
-    return b;
-  });
-  const next = el("button", "pg__next", "Start"); next.type = "button";
-  /* Next is ignored while a step is already animating, so an accidental
-     double click cannot cut a walk the reader asked to watch short;
-     skip is the one way to do that (see finishNow). */
-  next.onclick = () => { if (!sim || stepState) return; runTo(at, false); };
-  const skip = el("button", "pg__skip", "skip"); skip.type = "button";
-  skip.onclick = () => { if (!sim) return; if (finishNow()) return; runTo(at, true); };
-  if (steps.length) q(".pg__steps").append(...stepBtns, next, skip);
-  function paintStory() {
-    if (!steps.length) return;
-    stepBtns.forEach((b, i) => { b.dataset.at = i < at ? "done" : i === at ? "now" : "todo"; });
-    next.textContent = at === 0 ? "Start" : "Next";
-    /* Next and skip go once the story is told. Focus on either moves to the
-       free Step button the unlock just showed, not to the page. */
-    const a = document.activeElement;
-    const told = at === steps.length, held = (a === next || a === skip) && a.matches(":focus-visible");
-    next.hidden = skip.hidden = told;
-    /* Keyboard focus only (a tap focuses a button too), and never scrolled:
-       on a phone a scroll-into-view here threw the graph off the screen. */
-    if (told && held) q(".pg__step").focus({ preventScroll: true });
-    if (at === 0) q(".pg__say").textContent = "";
-  }
-  /* Run step i on the scene's own tree. i === at (Next or skip on the step
-     already loaded) just continues the live sim; any other i - forward or
-     back - replays from tick 0 so every step before it runs in order, with
-     its hazard, rather than being skipped outright. A step button passes
-     fast=true for i <= at (an already-told step, replayed at once - there is
-     nothing left to watch) and fast=false for i > at (a step ahead, which
-     the reader has not seen yet and so earns the same animation Next would
-     have given it); the steps before it still run fast either way. */
-  function runTo(i, fast) {
-    if (!sim) return;
-    stop();
-    resetToScene();
-    if (i !== at) {
-      boot();
-      for (let k = 0; k < i; k++) runStep(k, true);
-    }
-    runStep(i, fast || REDUCED.matches);
-  }
-  function runStep(i, fast) {
+  /* The moments land in a list, not one line: two of them can land a tick
+     apart, a tenth of a second at the default rate, and a caption replaced
+     that fast is a caption nobody read. The newest reads in full ink. */
+  const say = q(".pg__say"), retell = q(".pg__retell");
+  function land({ i, t, ok }) {
     const step = steps[i];
-    const cap = sim.t + (step.cap ?? 600);
-    let first = true;
-    const rawTick = () => { const ok = stepTick(sim, step, first); first = false; return ok; };
-    const finish = (ok) => {
-      stop();
-      at = i + 1;
-      q(".pg__say").textContent = ok ? fill(step.say, sim.t) : `This did not happen within ${step.cap ?? 600} ticks.`;
-      if (ok && step.show) view.show(step.show);
-      if (at === steps.length) {
-        story = false; pg.classList.remove("pg--story");
-        /* A scene with no goal still owes onDone once the story is fully told. */
-        if (!cfg.goal && !done) { done = true; onDone?.(); }
-      }
-      paintStory();
-    };
-    const predicateAlready = !step.hazard && stepDone(sim, step) && typeof step.to !== "number";
-    if (predicateAlready) return finish(true);
-    if (fast) {
-      let ok = false;
-      while (!ok && sim.t < cap) ok = rawTick();
-      paintAfterTick();       // one repaint at the tick it lands on, not every tick it passed through
-      return finish(ok);
-    }
-    stepState = { rawTick, cap, finish };
-    timer = setInterval(() => {
-      const ok = rawTick();
-      paintAfterTick();
-      if (ok) finish(true);
-      else if (sim.t >= cap) finish(false);
-    }, 1000 / STORY_RATE);
+    say.appendChild(el("li", "", esc(ok ? fill(step.say, t) : `This did not happen within ${step.cap ?? 600} ticks.`)));
+    if (ok && step.show) view.show(step.show);
+    if (!cursor.done) return;
+    /* The last moment: the same run goes on, now the reader's. */
+    story = false; pg.classList.remove("pg--story"); retell.hidden = false;
+    /* A scene with no goal still owes onDone once the story is fully told. */
+    if (!cfg.goal && !done) { done = true; onDone?.(); }
   }
-  /* Skip pressed while a step is already animating must not start a second
-     runStep - that would hand it a fresh `first`, applying the step's hazard
-     a second time, and a fresh `cap` counted from now instead of from the
-     step's own start. It drains the same running step's closure from
-     wherever it currently is instead. Next never reaches here while a step
-     animates (see next.onclick) - it is ignored instead, so a double click
-     on Next cannot cut the walk short by accident. */
-  function finishNow() {
-    if (!sim || !stepState) return false;
-    const { rawTick, cap, finish } = stepState;
-    stop();
-    let ok = false;
-    while (!ok && sim.t < cap) ok = rawTick();
-    paintAfterTick();
-    finish(ok);
-    return true;
-  }
+  /* The button hides itself while the story is told, so keyboard focus moves
+     to the one that now pauses it rather than dropping to the page. */
+  if (retell) retell.onclick = () => {
+    if (!sim) return;
+    const held = retell.matches(":focus-visible");
+    resetToScene(); boot(true); play();
+    if (held) q(".pg__play").focus({ preventScroll: true });
+  };
 
-  /* ── free play ── */
+  /* ── the controls ── */
   function play() {
     if (!sim || timer) return;
     q(".pg__play").textContent = "Pause";
-    timer = setInterval(() => oneTick(), 1000 / rate);
+    timer = setInterval(tick, 1000 / rate);
   }
   function stop() {
     if (timer) clearInterval(timer);
     timer = null;
-    stepState = null;
     const b = q(".pg__play"); if (b) b.textContent = "Play";
   }
-  q(".pg__step").onclick = () => { if (!sim) return; stop(); oneTick(); };
+  q(".pg__step").onclick = () => { if (!sim) return; stop(); tick(); };
   q(".pg__play").onclick = () => (timer ? stop() : play());
-  /* Reset starts the tree the reader has now (variant, mode or edit) again at
-     tick 0 and stays unlocked. Re-telling the story is the step 1 button. */
-  q(".pg__reset").onclick = () => { if (!sim) return; bootFree(); };
+  /* Reset starts the tree the reader has now again at tick 0: the story
+     again while it is still being told (its hazards are still hidden, so
+     there is nothing else to start), the reader's own run once it has been. */
+  q(".pg__reset").onclick = () => { if (!sim) return; boot(story); };
   q(".pg__rate input").oninput = (e) => { rate = RATES[e.target.value]; q(".pg__rate b").textContent = String(rate); if (timer) { stop(); play(); } };
 
   /* variants and the mode toggle */
@@ -302,7 +235,7 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
          controls, and it could read "memory" over a tree that is reactive. */
       const sel = q(".pg__mode select");
       if (sel) sel.value = parse(text, leaves).mode ?? "reactive";
-      bootFree();
+      boot(false);
     };
     sw.appendChild(b);
   });
@@ -320,7 +253,7 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
       if (q("textarea")) q("textarea").value = text;
       /* The highlighted variant has to be the tree now running, or none. */
       sw.querySelectorAll(".pg__var").forEach((x, i) => x.classList.toggle("on", format(parse(cfg.variants[i].tree, leaves)) === text));
-      bootFree();
+      boot(false);
     };
     sw.appendChild(lab);
   }
@@ -337,11 +270,11 @@ export function mountPlayground(host, cfg, { onDone } = {}) {
     q("textarea").value = text;
     q(".pg__apply").onclick = () => {
       if (!sim) return;
-      try { parse(q("textarea").value, leaves); text = q("textarea").value; bootFree(); }
+      try { parse(q("textarea").value, leaves); text = q("textarea").value; boot(false); }
       catch (e) { showErr(e instanceof ParseError ? e : new Error(e.message)); }
     };
   }
 
-  boot();
+  boot(true);
   return () => { stop(); view.destroy(); sim = null; };
 }

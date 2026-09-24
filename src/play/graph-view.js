@@ -1,6 +1,7 @@
 /* The tree as a live graph. Layout comes from layout.js and shapes from svg.js,
    so it is the plate primitives made live: nodes take the interpreter's answer
-   as a class, edges pulse in the order the tick walked, a node that was Running
+   as a class, the edges the tick walked are drawn in the tick colour (and draw
+   in, in walk order, when there is time to watch), a node that was Running
    and is not visited flashes once (the halt), so does a node the trace marks
    halted inside the tick (a Timeout giving up), and a click opens a card that
    reads from the trace and the built tree, nothing else (Tab and Enter open
@@ -227,15 +228,19 @@ export function graphView(host) {
     },
     /* One history entry. `prev` is the entry before it, for the halt flash
        (haltedNow, in run.js); when omitted the view uses what it painted last. `replay` marks a
-       repaint from stored history rather than a live tick - see showCard(). */
-    paint(entry, prev, replay = false) {
+       repaint from stored history rather than a live tick - see showCard(). `animate` is the
+       walk's draw-in (see below): off for a replay, and the caller turns it off for a fast run. */
+    paint(entry, prev, replay = false, animate = !replay) {
       const before = prev ?? lastEntry ?? { trace: [] };
       const halted = haltedNow(before.trace, entry.trace);
       for (const [id, g] of byId) {
-        g.classList.remove("st-ok", "st-fail", "st-run", "dirty", "err", "halt");
+        g.classList.remove("st-ok", "st-fail", "st-run", "dirty", "err");
         g.classList.add("st-idle");
         g.querySelector("title.err-t")?.remove();
-        if (halted.includes(id) && !REDUCED.matches) g.classList.add("halt");
+        /* The flash is left to finish rather than cleared by the next paint,
+           which in a run comes a tenth of a second later; it plays once, so
+           the class staying on after it ends changes nothing. */
+        if (halted.includes(id) && !REDUCED.matches) { g.classList.remove("halt"); void g.getBoundingClientRect(); g.classList.add("halt"); }
       }
       for (const x of entry.trace) {
         const g = byId.get(x.id); if (!g) continue;
@@ -243,9 +248,15 @@ export function graphView(host) {
         if (x.dirty) g.classList.add("dirty");
         if (x.error) { g.classList.add("err"); g.insertAdjacentHTML("afterbegin", `<title class="err-t">${esc(x.error)}</title>`); }
       }
-      edgeTo.forEach((l) => { l.classList.remove("pulse"); l.style.animationDelay = ""; });
-      if (!REDUCED.matches) walkOrder(entry.trace).forEach((id, i) => {
+      /* Every edge the tick crossed stays drawn in the tick colour until the
+         next paint, so a run shows its path live. The draw-in, edge by edge
+         in walk order, only when there is time to watch it: restarted every
+         tick of a run, it never finished and the path was never drawn. */
+      edgeTo.forEach((l) => { l.classList.remove("walk", "pulse"); l.style.animationDelay = ""; });
+      walkOrder(entry.trace).forEach((id, i) => {
         const l = edgeTo.get(id); if (!l) return;
+        l.classList.add("walk");
+        if (!animate || REDUCED.matches) return;
         l.style.animationDelay = `${i * 40}ms`;
         void l.getBoundingClientRect();          // restart the animation when the class is re-added
         l.classList.add("pulse");

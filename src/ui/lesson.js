@@ -147,8 +147,8 @@ export function renderLesson(root, id) {
             : "");
         break;
 
-      /* A live scene: the interpreter on the real world, told in steps, then
-         handed over. It sits exactly where the flow put it, which is right after
+      /* A live scene: the interpreter on the real world, told as one live run,
+         then handed over. It sits exactly where the flow put it, which is right after
          the paragraph that set it up. */
       case "scene": {
         let cfg;
@@ -156,7 +156,7 @@ export function renderLesson(root, id) {
         sceneSeen++;
         node = el("div", "scene");
         node.appendChild(el("div", "scene__cap",
-          `<span>Scene ${i + 1}-${sceneSeen}</span><span>${cfg.steps.length ? `${cfg.steps.length} steps, then yours` : "yours"}</span>`));
+          `<span>Scene ${i + 1}-${sceneSeen}</span><span>${cfg.steps.length ? "live, then yours" : "yours"}</span>`));
         const host = el("div", "scene__host");
         node.appendChild(host);
         const stop = mountPlayground(host, cfg, { onDone: () => markStep(les.id, "scene") });
